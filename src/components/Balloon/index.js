@@ -6,7 +6,6 @@ import computer from 'assets/windowsIcons/676(16x16).png';
 function Balloon({ startAfter = 600, onClose }) {
   const [start, setStart] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [status, setStatus] = useState('idle');
@@ -24,7 +23,7 @@ function Balloon({ startAfter = 600, onClose }) {
       const response = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, website, consent: true }),
+        body: JSON.stringify({ email, website, consent: true }),
       });
       const result = await response.json();
       if (!response.ok || result.ok !== true) {
@@ -55,8 +54,8 @@ function Balloon({ startAfter = 600, onClose }) {
             </span>
           </div>
           <p className="balloon__text__first">
-            Hi, I’m Jack. Explore my projects, play a round of Minesweeper, and
-            make yourself at home.
+            Explore my work, personal blog, or play some games. I also write on
+            occasion about tech, ai, and business.
           </p>
           {!formOpen && (
             <button
@@ -70,24 +69,10 @@ function Balloon({ startAfter = 600, onClose }) {
           {formOpen &&
             (status === 'sent' ? (
               <p className="balloon__success" role="status">
-                Thanks! Your waitlist request has been sent. Stay tuned.
+                Thanks! Your email has been sent.
               </p>
             ) : (
               <form className="balloon__form" onSubmit={onSubmit}>
-                <p className="balloon__form-intro">
-                  Leave your email for project updates and the newsletter
-                  launch.
-                </p>
-                <label htmlFor="waitlist-name">Name (optional)</label>
-                <input
-                  id="waitlist-name"
-                  name="name"
-                  autoComplete="name"
-                  maxLength={80}
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  disabled={status === 'sending'}
-                />
                 <label htmlFor="waitlist-email">Email address</label>
                 <input
                   id="waitlist-email"
@@ -109,10 +94,6 @@ function Balloon({ startAfter = 600, onClose }) {
                   value={website}
                   onChange={e => setWebsite(e.target.value)}
                 />
-                <p className="balloon__consent">
-                  By joining, you’re asking to receive occasional updates from
-                  Jack.
-                </p>
                 {error && (
                   <p className="balloon__error" role="alert">
                     {error}
@@ -253,9 +234,6 @@ const Div = styled.div`
   .balloon__signup-link:hover {
     color: #0066cc;
   }
-  .balloon__form-intro {
-    margin: 4px 0 10px;
-  }
   .balloon__form label {
     display: block;
     margin-bottom: 3px;
@@ -277,11 +255,6 @@ const Div = styled.div`
   }
   .balloon__form .balloon__honeypot {
     display: none;
-  }
-  .balloon__consent {
-    color: #555;
-    font-size: 10px;
-    margin: 2px 0 10px;
   }
   .balloon__submit {
     min-width: 96px;

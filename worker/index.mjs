@@ -91,12 +91,9 @@ export function createWorker(
         message: 'Please check your details and try again.',
       });
     }
-    const name = typeof data.name === 'string' ? data.name.trim() : '';
     const email =
       typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
     if (
-      name.length > 80 ||
-      /[\u0000-\u001f\u007f]/.test(name) ||
       email.length > 254 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
       data.consent !== true ||
@@ -138,7 +135,7 @@ export function createWorker(
       attempts.delete(attempts.keys().next().value);
     attempts.set(client, current);
     const day = new Date(time).toISOString().slice(0, 10);
-    const key = await fingerprint(JSON.stringify({ name, email, day }));
+    const key = await fingerprint(JSON.stringify({ email, day }));
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     try {
@@ -157,7 +154,6 @@ export function createWorker(
           text: [
             'A visitor requested to join the jackpelech.com newsletter waitlist.',
             '',
-            `Name: ${name || '(not provided)'}`,
             `Email: ${email}`,
             '',
             'They requested occasional project updates and news about the newsletter launch.',

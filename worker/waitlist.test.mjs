@@ -8,7 +8,7 @@ const env = {
   WAITLIST_FROM: 'Website <waitlist@example.com>',
 };
 function submission(
-  body = { name: 'A Visitor', email: 'visitor@example.com', consent: true },
+  body = { email: 'visitor@example.com', consent: true },
   headers = {},
 ) {
   return new Request(`${origin}/api/waitlist`, {
@@ -57,15 +57,13 @@ test('a visitor submission emails only the site owner with a fixed subject and n
     deliveries[0].data.subject,
     'jackpelech.com newsletter waitlist signup',
   );
-  assert.match(
-    deliveries[0].data.text,
-    /Name: A Visitor\nEmail: visitor@example.com/,
-  );
+  assert.match(deliveries[0].data.text, /Email: visitor@example.com/);
+  assert.doesNotMatch(deliveries[0].data.text, /Name:|A Visitor/);
   assert.equal(deliveries[0].data.from, env.WAITLIST_FROM);
   assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
 });
 
-test('a name is optional and repeated submissions reuse an idempotency key', async () => {
+test('email-only submissions reuse an idempotency key', async () => {
   const { worker, deliveries } = setup();
   for (let i = 0; i < 2; i++) {
     const response = await worker.fetch(
@@ -74,23 +72,26 @@ test('a name is optional and repeated submissions reuse an idempotency key', asy
     );
     assert.equal(response.status, 200);
   }
-  assert.match(deliveries[0].data.text, /Name: \(not provided\)/);
+  assert.doesNotMatch(deliveries[0].data.text, /Name:/);
   assert.equal(
     deliveries[0].headers['Idempotency-Key'],
     deliveries[1].headers['Idempotency-Key'],
   );
 });
 
-test('invalid addresses, header injection, spam fields, and missing consent never trigger email', async () => {
+test('invalid addresses, oversized submissions, spam fields, and missing consent never trigger email', async () => {
   const { worker, deliveries } = setup();
   for (const body of [
     { email: 'bad-address', consent: true },
     { email: 'visitor@example.com', consent: false },
     { email: 'visitor@example.com', consent: true, website: 'spam' },
-    { name: 'Injected\nHeader', email: 'visitor@example.com', consent: true },
-    { name: 'a'.repeat(81), email: 'visitor@example.com', consent: true },
+    {
+      email: 'visitor@example.com\r\nBcc: unwanted@example.com',
+      consent: true,
+    },
+    { email: `${'a'.repeat(250)}@example.com`, consent: true },
     'invalid JSON',
-    JSON.stringify({ email: 'visitor@example.com', name: 'a'.repeat(5000) }),
+    JSON.stringify({ email: 'visitor@example.com', extra: 'a'.repeat(5000) }),
   ])
     assert.equal((await worker.fetch(submission(body), env)).status, 400);
   assert.equal(deliveries.length, 0);
