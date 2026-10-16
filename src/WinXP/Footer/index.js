@@ -6,7 +6,7 @@ import Balloon from 'components/Balloon';
 import startButton from 'assets/windowsIcons/start.png';
 import sound from 'assets/windowsIcons/690(16x16).png';
 import usb from 'assets/windowsIcons/394(16x16).png';
-import risk from 'assets/windowsIcons/229(16x16).png';
+import computer from 'assets/windowsIcons/676(16x16).png';
 
 const getTime = () => {
   const date = new Date();
@@ -35,6 +35,7 @@ function Footer({
 }) {
   const [time, setTime] = useState(getTime);
   const [menuOn, setMenuOn] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(true);
   const menu = useRef(null);
   function toggleMenu() {
     setMenuOn(on => !on);
@@ -94,9 +95,17 @@ function Footer({
       <div className="footer__items right">
         <img className="footer__icon" src={sound} alt="" />
         <img className="footer__icon" src={usb} alt="" />
-        <img className="footer__icon" src={risk} alt="" />
+        <button
+          type="button"
+          className="footer__welcome"
+          aria-label="Open welcome message"
+          title="Welcome to jackpelech.com"
+          onClick={() => setWelcomeOpen(true)}
+        >
+          <img className="footer__icon" src={computer} alt="" />
+        </button>
         <div style={{ position: 'relative', width: 0, height: 0 }}>
-          <Balloon />
+          {welcomeOpen && <Balloon onClose={() => setWelcomeOpen(false)} />}
         </div>
         <div className="footer__time">{time}</div>
       </div>
@@ -145,6 +154,14 @@ const Container = styled.footer`
   right: 0;
   left: 0;
   display: flex;
+  .footer__welcome {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
   .footer__items.left {
     height: 100%;
     flex: 1;

@@ -35,21 +35,11 @@ const internetExplorerOffset = {
 };
 const internetExplorerMaximized =
   window.innerWidth < 800 || window.innerHeight < 640;
+const minesweeperOffset = {
+  x: Math.max(8, Math.min(180, window.innerWidth - 250)),
+  y: Math.max(32, Math.min(170, window.innerHeight - 330)),
+};
 export const defaultAppState = [
-  {
-    component: InternetExplorer,
-    header: {
-      title: 'Internet Explorer',
-      icon: iePaper,
-    },
-    defaultSize: internetExplorerSize,
-    defaultOffset: internetExplorerOffset,
-    resizable: true,
-    minimized: false,
-    maximized: internetExplorerMaximized,
-    id: genId(),
-    zIndex: genIndex(),
-  },
   {
     component: Minesweeper,
     header: {
@@ -60,33 +50,10 @@ export const defaultAppState = [
       width: 0,
       height: 0,
     },
-    defaultOffset: {
-      x: 180,
-      y: 170,
-    },
+    defaultOffset: minesweeperOffset,
     resizable: false,
     minimized: false,
     maximized: false,
-    id: genId(),
-    zIndex: genIndex(),
-  },
-  {
-    component: MyComputer,
-    header: {
-      title: 'My Computer',
-      icon: computer,
-    },
-    defaultSize: {
-      width: 660,
-      height: 500,
-    },
-    defaultOffset: {
-      x: 250,
-      y: 40,
-    },
-    resizable: true,
-    minimized: false,
-    maximized: window.innerWidth < 800,
     id: genId(),
     zIndex: genIndex(),
   },
@@ -162,10 +129,7 @@ export const appSettings = {
       width: 0,
       height: 0,
     },
-    defaultOffset: {
-      x: 190,
-      y: 180,
-    },
+    defaultOffset: minesweeperOffset,
     resizable: false,
     minimized: false,
     maximized: false,
