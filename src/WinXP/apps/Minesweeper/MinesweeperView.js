@@ -96,10 +96,78 @@ function MineSweeperView({
   difficulty,
   openingCeil,
   openingCeils,
+  columns,
+  rows,
+  mobile,
 }) {
   const face = useRef(null);
+  const skipClick = useRef(-1);
+  const inputType = useRef('mouse');
+  const touch = useRef(null);
+  const [flagMode, setFlagMode] = useState(false);
   const [mouseDownContent, setMouseDownContent] = useState(false);
   const [openBehavior, setOpenBehavior] = useState({ index: -1, behavior: '' });
+  useEffect(() => {
+    if (!mobile) setFlagMode(false);
+  }, [mobile]);
+  function indexFromEvent(e) {
+    const cell = e.target.closest('.mine__ceil');
+    return cell ? Number(cell.dataset.index) : -1;
+  }
+  function activateCell(index) {
+    if (flagMode) changeCeilState(index);
+    else if (ceils[index].state === 'open') openCeils(index);
+    else openCeil(index);
+  }
+  function onClickCeils(e) {
+    const index = indexFromEvent(e);
+    if (index === -1) return;
+    if (skipClick.current === index) {
+      skipClick.current = -1;
+      return;
+    }
+    activateCell(index);
+  }
+  function cancelTouch() {
+    touch.current = null;
+    setOpenBehavior({ index: -1, behavior: '' });
+    setMouseDownContent(false);
+  }
+  function onPointerDownCeils(event) {
+    inputType.current = event.pointerType || 'mouse';
+    skipClick.current = -1;
+    if (inputType.current === 'mouse') return;
+    if (event.isPrimary === false) return cancelTouch();
+    const index = indexFromEvent(event);
+    if (index < 0) return;
+    touch.current = {
+      id: event.pointerId,
+      index,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+    };
+    setMouseDownContent(true);
+    if (!flagMode) setOpenBehavior({ index, behavior: 'single' });
+  }
+  function onPointerMoveCeils(event) {
+    const press = touch.current;
+    if (!press || press.id !== event.pointerId) return;
+    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 8) {
+      press.moved = true;
+      setOpenBehavior({ index: -1, behavior: '' });
+      setMouseDownContent(false);
+    }
+  }
+  function onPointerUpCeils(event) {
+    const press = touch.current;
+    if (!press || press.id !== event.pointerId) return;
+    if (!press.moved) {
+      activateCell(press.index);
+      skipClick.current = press.index;
+    }
+    cancelTouch();
+  }
   function remainMines() {
     return (
       mines -
@@ -141,10 +209,9 @@ function MineSweeperView({
     // eslint-disable-next-line
   }, [openBehavior.index, openBehavior.behavior]);
   function onMouseDownCeils(e) {
-    const index = Array.prototype.indexOf.call(
-      e.currentTarget.children,
-      e.target.closest('.mine__ceil'),
-    );
+    if (inputType.current !== 'mouse') return;
+    skipClick.current = -1;
+    const index = indexFromEvent(e);
     if (e.button === 2 && e.buttons === 2 && index !== -1) {
       changeCeilState(index);
     } else if (e.button === 0 && e.buttons === 1) {
@@ -160,22 +227,23 @@ function MineSweeperView({
     }
   }
   function onMouseOverCeils(e) {
-    const index = Array.prototype.indexOf.call(
-      e.currentTarget.children,
-      e.target.closest('.mine__ceil'),
-    );
+    if (inputType.current !== 'mouse') return;
+    const index = indexFromEvent(e);
     setOpenBehavior({
       index,
       behavior: openBehavior.behavior,
     });
   }
   function onMouseUpCeils() {
+    if (inputType.current !== 'mouse') return;
     const { behavior, index } = openBehavior;
     if (index === -1) return;
     if (behavior === 'single') {
-      openCeil(index);
+      activateCell(index);
+      skipClick.current = index;
     } else if (behavior === 'multi') {
       openCeils(index);
+      skipClick.current = index;
     }
   }
   function onClickOptionItem(item) {
@@ -204,14 +272,12 @@ function MineSweeperView({
     setOpenBehavior({ index: -1, behavior: '' });
     setMouseDownContent(false);
   }
-  useEffect(() => {
-    window.addEventListener('mouseup', onMouseUp);
-    return () => {
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, []);
   return (
-    <div className={className} onContextMenu={e => e.preventDefault()}>
+    <div
+      className={className}
+      onContextMenu={e => e.preventDefault()}
+      data-difficulty={difficulty}
+    >
       <div className="mine__options">
         <WindowDropDowns
           items={genDropDownData(difficulty)}
@@ -231,13 +297,51 @@ function MineSweeperView({
           </div>
           <div className="mine__digits__outer">{renderDigits(seconds)}</div>
         </div>
-        <div
-          className="mine__content__inner"
-          onMouseDown={onMouseDownCeils}
-          onMouseOver={onMouseOverCeils}
-          onMouseUp={onMouseUpCeils}
-        >
-          <Ceils ceils={ceils} />
+        {mobile && (
+          <div
+            className="mine__touch-controls"
+            role="group"
+            aria-label="Touch controls"
+          >
+            <button
+              type="button"
+              aria-pressed={!flagMode}
+              onClick={() => setFlagMode(false)}
+            >
+              Reveal
+            </button>
+            <button
+              type="button"
+              aria-pressed={flagMode}
+              onClick={() => setFlagMode(true)}
+            >
+              Flag
+            </button>
+            <span>
+              {flagMode
+                ? 'Tap a square to mark it'
+                : 'Tap a square to reveal it'}
+            </span>
+          </div>
+        )}
+        <div className="mine__board-scroll">
+          <div
+            className="mine__content__inner"
+            role="group"
+            aria-label={`${difficulty} Minesweeper board`}
+            data-columns={columns}
+            data-rows={rows}
+            onPointerDown={onPointerDownCeils}
+            onPointerMove={onPointerMoveCeils}
+            onPointerUp={onPointerUpCeils}
+            onPointerCancel={cancelTouch}
+            onMouseDown={onMouseDownCeils}
+            onMouseOver={onMouseOverCeils}
+            onMouseUp={onMouseUpCeils}
+            onClick={onClickCeils}
+          >
+            <Ceils ceils={ceils} columns={columns} />
+          </div>
         </div>
       </section>
     </div>
@@ -246,7 +350,7 @@ function MineSweeperView({
 function getTextImg(index) {
   return [empty, open1, open2, open3, open4, open5, open6, open7, open8][index];
 }
-function Ceils({ ceils }) {
+function Ceils({ ceils, columns }) {
   function renderContent(ceil) {
     const { state, minesAround, opening } = ceil;
     switch (state) {
@@ -268,9 +372,24 @@ function Ceils({ ceils }) {
   }
 
   return ceils.map((ceil, index) => (
-    <div key={index} className="mine__ceil">
+    <button
+      key={index}
+      type="button"
+      className="mine__ceil"
+      data-index={index}
+      data-state={ceil.state}
+      aria-label={`Row ${Math.floor(index / columns) + 1}, column ${(index %
+        columns) +
+        1}: ${
+        ceil.state === 'open'
+          ? `${Math.max(0, ceil.minesAround)} nearby mines`
+          : ceil.state === 'cover'
+          ? 'covered'
+          : ceil.state
+      }`}
+    >
       {renderContent(ceil)}
-    </div>
+    </button>
   ));
 }
 
@@ -319,8 +438,7 @@ const Mine = () => (
 
 const CeilBackgroundCover = styled.div`
   position: absolute;
-  width: 16px;
-  height: 16px;
+  inset: 0;
   border-left: rgb(245, 245, 245) solid 2px;
   border-top: rgb(245, 245, 245) solid 2px;
   border-right: rgb(128, 128, 128) solid 2px;
@@ -328,13 +446,15 @@ const CeilBackgroundCover = styled.div`
 `;
 const CeilBackgroundOpen = styled.div`
   position: absolute;
-  width: 16px;
-  height: 16px;
+  inset: 0;
   border-left: rgb(128, 128, 128) solid 1px;
   border-top: rgb(128, 128, 128) solid 1px;
 `;
 
 export default styled(MineSweeperView)`
+  --mine-cell-size: 16px;
+  width: max-content;
+  max-width: 100%;
   img {
     pointer-events: none;
   }
@@ -347,6 +467,39 @@ export default styled(MineSweeperView)`
     border-top: rgb(245, 245, 245) solid 3px;
     background-color: rgb(192, 192, 192);
     padding: 5px;
+  }
+  .mine__board-scroll {
+    max-height: calc(
+      var(--desktop-viewport-height, 100vh) - var(--desktop-safe-top) -
+        var(--desktop-taskbar-height) - 160px
+    );
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    touch-action: pan-y pinch-zoom;
+  }
+  .mine__touch-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 38px;
+    font: 10px Tahoma, sans-serif;
+  }
+  .mine__touch-controls button {
+    min-height: 30px;
+    padding: 3px 7px;
+    color: #111;
+    border: 1px solid #777;
+    background: linear-gradient(#fff, #ece9d8);
+    font: 11px Tahoma, sans-serif;
+  }
+  .mine__touch-controls button[aria-pressed='true'] {
+    background: #ddd;
+    box-shadow: inset 1px 1px 2px #777;
+  }
+  .mine__touch-controls span {
+    flex: 1;
+    max-width: 115px;
   }
   .mine__score-bar {
     height: 34px;
@@ -409,19 +562,45 @@ export default styled(MineSweeperView)`
   }
   .mine__content__inner {
     display: grid;
-    grid-template-columns: repeat(${({ columns }) => columns}, 16px);
-    grid-template-rows: repeat(${({ rows }) => rows}, 16px);
+    grid-template-columns: repeat(
+      ${({ columns }) => columns},
+      var(--mine-cell-size)
+    );
+    grid-template-rows: repeat(${({ rows }) => rows}, var(--mine-cell-size));
     border-top: rgb(128, 128, 128) solid 3px;
     border-left: rgb(128, 128, 128) solid 3px;
     border-right: rgb(245, 245, 245) solid 3px;
     border-bottom: rgb(245, 245, 245) solid 3px;
   }
   .mine__ceil {
+    display: block;
+    width: var(--mine-cell-size);
+    height: var(--mine-cell-size);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     position: relative;
+    -webkit-touch-callout: none;
+    &:focus-visible {
+      outline: 1px dotted #111;
+      outline-offset: -3px;
+      z-index: 1;
+    }
+    * {
+      pointer-events: none;
+    }
     img {
       position: absolute;
-      width: 16px;
-      height: 16px;
+      inset: 0;
+      width: var(--mine-cell-size);
+      height: var(--mine-cell-size);
+      image-rendering: pixelated;
     }
   }
+  ${({ mobile, columns }) =>
+    mobile &&
+    `
+    --mine-cell-size: min(24px, calc((100vw - var(--desktop-safe-left) - var(--desktop-safe-right) - 56px) / ${columns}));
+  `}
 `;

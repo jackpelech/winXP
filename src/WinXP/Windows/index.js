@@ -104,6 +104,7 @@ const Window = memo(function({
   }, []);
   const { offset, size } = useElementResize(ref, {
     dragRef,
+    draggable: !maximized,
     defaultOffset,
     defaultSize,
     boundary: {
@@ -144,9 +145,11 @@ const Window = memo(function({
   }
   return (
     <div
+      role="group"
+      aria-label={`${header.title} window`}
       className={className}
       ref={ref}
-      onMouseDown={_onMouseDown}
+      onPointerDown={_onMouseDown}
       style={{
         transform: `translate(${x}px,${y}px)`,
         width: width ? `${width}px` : 'auto',
@@ -249,6 +252,8 @@ const StyledWindow = styled(Window)`
     width: 15px;
   }
   .app__header {
+    touch-action: none;
+    cursor: ${({ maximized }) => (maximized ? 'default' : 'move')};
     display: ${({ header }) => (header.invisible ? 'none' : 'flex')};
     height: 25px;
     line-height: 25px;

@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
 
+export function constrainWindowOffset(position, size, area) {
+  return {
+    x: Math.max(6, Math.min(position.x, area.width - size.width - 6)),
+    y: Math.max(6, Math.min(position.y, area.height - size.height - 6)),
+  };
+}
+
 function useElementResize(ref, options) {
   const {
     defaultOffset,
@@ -12,6 +19,82 @@ function useElementResize(ref, options) {
   const [offset, setOffset] = useState(defaultOffset);
   const [size, setSize] = useState(defaultSize);
   const cursorPos = useCursor(ref, resizeThreshold, resizable);
+  const dragRef = options.dragRef;
+  const draggable = options.draggable !== false;
+  useEffect(() => {
+    const target = ref.current;
+    const titleBar = dragRef && dragRef.current;
+    if (!target || !titleBar || !draggable) return;
+    let gesture = null;
+    function move(event) {
+      if (!gesture || event.pointerId !== gesture.id) return;
+      setOffset(
+        constrainWindowOffset(
+          {
+            x: gesture.x + event.clientX - gesture.clientX,
+            y: gesture.y + event.clientY - gesture.clientY,
+          },
+          gesture.size,
+          gesture.area,
+        ),
+      );
+      if (event.cancelable) event.preventDefault();
+    }
+    function end(event) {
+      if (!gesture || (event && event.pointerId !== gesture.id)) return;
+      const id = gesture.id;
+      gesture = null;
+      if (titleBar.hasPointerCapture && titleBar.hasPointerCapture(id)) {
+        titleBar.releasePointerCapture(id);
+      }
+    }
+    function start(event) {
+      if (
+        event.target !== titleBar ||
+        event.button !== 0 ||
+        event.isPrimary === false
+      )
+        return;
+      const rect = target.getBoundingClientRect();
+      const origin = target.parentElement.getBoundingClientRect();
+      gesture = {
+        id: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        x: rect.left - origin.left,
+        y: rect.top - origin.top,
+        size: { width: rect.width, height: rect.height },
+        area: {
+          width: boundary.right - boundary.left + 2,
+          height: boundary.bottom - boundary.top + 2,
+        },
+      };
+      if (titleBar.setPointerCapture)
+        titleBar.setPointerCapture(event.pointerId);
+      if (event.cancelable) event.preventDefault();
+    }
+    titleBar.addEventListener('pointerdown', start);
+    titleBar.addEventListener('lostpointercapture', end);
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+    return () => {
+      end();
+      titleBar.removeEventListener('pointerdown', start);
+      titleBar.removeEventListener('lostpointercapture', end);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+    };
+  }, [
+    ref,
+    dragRef,
+    draggable,
+    boundary.top,
+    boundary.right,
+    boundary.bottom,
+    boundary.left,
+  ]);
   useEffect(() => {
     const target = ref.current;
     if (!target) return;
@@ -220,8 +303,7 @@ function useElementResize(ref, options) {
       originMouseY = e.pageY;
       _boundary = { ...boundary };
       if (dragTarget && e.target === dragTarget) {
-        shouldCover = true;
-        return onDragStart(e);
+        return;
       }
       if (e.target !== target || !resizable) return;
       switch (cursorPos) {

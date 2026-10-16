@@ -18,3 +18,16 @@ export const Config = {
     mines: 99,
   },
 };
+
+export const mobileGameQuery =
+  '(max-width: 767px), (pointer: coarse) and (max-height: 767px)';
+
+export function getGameConfig(difficulty, mobile = false) {
+  const config = Config[difficulty];
+  if (!mobile || difficulty === 'Beginner') return config;
+  return {
+    ...config,
+    rows: difficulty === 'Intermediate' ? 32 : 40,
+    columns: difficulty === 'Intermediate' ? 8 : 12,
+  };
+}

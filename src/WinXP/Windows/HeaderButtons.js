@@ -15,7 +15,8 @@ function HeaderButtons({
       <button
         key="minimize"
         className="header__button header__button--minimize"
-        onMouseUp={onMinimize}
+        aria-label="Minimize window"
+        onClick={onMinimize}
       />
     ),
     maximize: (
@@ -24,14 +25,16 @@ function HeaderButtons({
         className={`header__button ${
           maximized ? 'header__button--maximized' : 'header__button--maximize'
         } ${resizable ? '' : 'header__button--disable'}`}
-        onMouseUp={onMaximize}
+        aria-label={maximized ? 'Restore window' : 'Maximize window'}
+        onClick={onMaximize}
       />
     ),
     close: (
       <button
         key="button"
         className="header__button header__button--close"
-        onMouseUp={onClose}
+        aria-label="Close window"
+        onClick={onClose}
       />
     ),
   };

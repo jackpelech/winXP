@@ -1,7 +1,8 @@
 import React, { useReducer, useEffect, useState } from 'react';
 import sampleSize from 'lodash.samplesize';
+import useMedia from 'react-use/lib/useMedia';
 
-import { Config } from './config';
+import { getGameConfig, mobileGameQuery } from './config';
 import MinesweeperView from './MinesweeperView';
 
 // state: {
@@ -17,24 +18,32 @@ import MinesweeperView from './MinesweeperView';
 //   }
 // }
 
-function getInitState(difficulty = 'Beginner') {
+export function getInitState(difficulty = 'Beginner', mobile = false) {
   return {
     difficulty,
     status: 'new',
-    ...genGameConfig(Config[difficulty]),
+    ...genGameConfig(getGameConfig(difficulty, mobile)),
   };
 }
 
-function reducer(state, action = {}) {
+export function reducer(state, action = {}) {
   switch (action.type) {
     case 'CLEAR_MAP':
-      const difficulty = action.payload || state.difficulty;
-      return getInitState(difficulty);
+      const difficulty = action.payload.difficulty || state.difficulty;
+      return getInitState(difficulty, action.payload.mobile);
     case 'START_GAME':
       const exclude = action.payload;
       return {
         ...state,
-        ...insertMines({ ...Config[state.difficulty], exclude }, state.ceils),
+        ...insertMines(
+          {
+            rows: state.rows,
+            columns: state.columns,
+            mines: state.mines,
+            exclude,
+          },
+          state.ceils,
+        ),
         status: 'started',
       };
     case 'OPEN_CEIL': {
@@ -125,7 +134,8 @@ function reducer(state, action = {}) {
         ...ceil,
         opening: false,
       }));
-      ceils[action.payload] = { ...ceil, opening: true };
+      if (action.payload >= 0)
+        ceils[action.payload] = { ...ceil, opening: true };
       return {
         ...state,
         ceils,
@@ -153,9 +163,14 @@ function reducer(state, action = {}) {
 }
 
 function MineSweeper({ defaultDifficulty, onClose }) {
+  const mobile = useMedia(
+    mobileGameQuery,
+    window.matchMedia(mobileGameQuery).matches,
+  );
   const [state, dispatch] = useReducer(
     reducer,
-    getInitState(defaultDifficulty),
+    { difficulty: defaultDifficulty, mobile },
+    initial => getInitState(initial.difficulty, initial.mobile),
   );
   const seconds = useTimer(state.status);
   function changeCeilState(index) {
@@ -164,6 +179,7 @@ function MineSweeper({ defaultDifficulty, onClose }) {
     dispatch({ type: 'CHANGE_CEIL_STATE', payload: index });
   }
   function openCeil(index) {
+    if (!state.ceils[index] || state.ceils[index].state === 'flag') return;
     switch (state.status) {
       case 'new':
         dispatch({ type: 'START_GAME', payload: index });
@@ -201,7 +217,7 @@ function MineSweeper({ defaultDifficulty, onClose }) {
     const mineIndex = indexes.find(
       i => state.ceils[i].minesAround < 0 && state.ceils[i].state !== 'flag',
     );
-    if (mineIndex) {
+    if (mineIndex !== undefined) {
       dispatch({ type: 'GAME_OVER', payload: mineIndex });
     } else {
       indexes.forEach(i => dispatch({ type: 'OPEN_CEIL', payload: i }));
@@ -213,7 +229,7 @@ function MineSweeper({ defaultDifficulty, onClose }) {
     }
   });
   function onReset(difficulty) {
-    dispatch({ type: 'CLEAR_MAP', payload: difficulty });
+    dispatch({ type: 'CLEAR_MAP', payload: { difficulty, mobile } });
   }
   function checkRemains() {
     const safeCeils = state.ceils
@@ -232,6 +248,7 @@ function MineSweeper({ defaultDifficulty, onClose }) {
   return (
     <MinesweeperView
       {...state}
+      mobile={mobile}
       onClose={onClose}
       changeCeilState={changeCeilState}
       openCeil={openCeil}
