@@ -1530,6 +1530,8 @@ function average_points(points) {
 	return average;
 }
 $canvas_area.on("pointerdown", (event) => {
+	// Text input owns its Pencil gestures. Blurring here interrupts iPad Scribble.
+	if (event.target?.closest?.("input, textarea, [contenteditable='true']")) return;
 	if (pen_is_down() && event.pointerType !== "pen") return;
 	if (
 		document.activeElement instanceof HTMLElement && // exists and (for type checker:) has blur()
@@ -1712,7 +1714,7 @@ $canvas.on("pointerdown", (e) => {
 		if (selected_tools.length === 1 && [TOOL_PENCIL, TOOL_BRUSH].includes(selected_tool.id) && selected_tool.replace_stroke_points) {
 			const tool = selected_tool;
 			shape_assist = createShapeAssist({
-				start: pointer_start, scale: magnification,
+				start: pointer_start, scale: magnification, pointerType: pointer_type,
 				render(points) { tool.replace_stroke_points(points); update_helper_layer(); },
 				status(message) { $status_text.text(message); },
 			});

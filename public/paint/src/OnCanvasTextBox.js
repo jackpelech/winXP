@@ -20,6 +20,7 @@ class OnCanvasTextBox extends OnCanvasObject {
 		super(x, y, width, height, true);
 
 		this.$el.addClass("textbox");
+		this.native_text_editor = true;
 		var edit_textarea = E("textarea");
 		this.$editor = $(edit_textarea).addClass("textbox-editor");
 
@@ -51,6 +52,8 @@ class OnCanvasTextBox extends OnCanvasObject {
 
 		this.canvas = make_canvas(width, height);
 		this.canvas.style.pointerEvents = "none";
+		// The live, visible textarea is the editor. The bitmap is for history/export.
+		this.canvas.style.visibility = "hidden";
 		this.$el.append(this.canvas);
 
 		const update_size = () => {
@@ -100,7 +103,10 @@ class OnCanvasTextBox extends OnCanvasObject {
 			});
 
 			const font = text_tool_font;
-			const get_solid_color = (swatch) => `rgba(${get_rgba_from_color(swatch).join(", ")}`;
+			const get_solid_color = (swatch) => {
+				const [r, g, b, a] = get_rgba_from_color(swatch);
+				return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+			};
 			font.color = get_solid_color(selected_colors.foreground);
 			font.background = tool_transparent_mode ? "transparent" : get_solid_color(selected_colors.background);
 			this.$editor.add(this.canvas).css({
@@ -123,6 +129,11 @@ class OnCanvasTextBox extends OnCanvasObject {
 				color: font.color,
 				background: font.background,
 			});
+
+			// Override the upstream transparent-text overlay so WebKit sees and
+			// presents a real text editor, including native selection and Scribble.
+			edit_textarea.style.setProperty("color", font.color, "important");
+			edit_textarea.style.setProperty("background", font.background, "important");
 
 			// Must be after font is updated, since the minimum size depends on the font size.
 			auto_size();
@@ -166,7 +177,7 @@ class OnCanvasTextBox extends OnCanvasObject {
 
 		this.$el.css({
 			cursor: make_css_cursor("move", [8, 8], "move"),
-			touchAction: "none",
+			touchAction: "auto",
 		});
 		this.position();
 

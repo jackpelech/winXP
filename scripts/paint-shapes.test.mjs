@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-const source = readFileSync(new URL('../public/paint/src/shape-assist.js', import.meta.url), 'utf8');
+const source = readFileSync(process.env.SHAPE_ASSIST_SOURCE || new URL('../public/paint/src/shape-assist.js', import.meta.url), 'utf8');
 const { recognizeShape, createShapeAssist } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 const circle = (rx = 70, ry = rx, turns = 1) => Array.from({ length: 151 }, (_, i) => {
   const angle = i / 150 * Math.PI * 2 * turns;
@@ -58,4 +58,44 @@ test('release, cancellation, and a disabled setting cannot leave a delayed snap'
   const f = fixture(); line.slice(1).forEach(p => f.assist.move(p)); f.hold();
   assert.equal(f.assist.finish(false), null);
   assert.deepEqual(f.rendered.at(-1), line);
+});
+
+function pencilFixture(points) {
+  let time = 0, nextId = 0;
+  const timers = new Map(), rendered = [];
+  const assist = createShapeAssist({ start: points[0], pointerType: 'pen', now: () => time,
+    render: points => rendered.push(points), enabled: () => true,
+    setTimer(fn, delay) { timers.set(++nextId, { fn, due: time + delay }); return nextId; },
+    clearTimer(id) { timers.delete(id); } });
+  function advance(ms, runTimers = true) {
+    time += ms;
+    if (runTimers) for (const [id, timer] of [...timers]) if (timer.due <= time) { timers.delete(id); timer.fn(); }
+  }
+  points.slice(1).forEach(point => { advance(4); assist.move(point); });
+  return { assist, advance, rendered };
+}
+test('continuous high-frequency Pencil resting jitter still snaps after a hold', () => {
+  for (const points of [circle(), line, rectangle]) {
+    const f = pencilFixture(points), end = points.at(-1);
+    for (let i = 0; i < 120; i++) {
+      f.advance(1000 / 120);
+      f.assist.move({ x: end.x + Math.sin(i * 1.7) * 5, y: end.y + Math.cos(i * 2.1) * 4 });
+    }
+    assert.ok(f.rendered.length, 'resting stylus samples must not restart the hold forever');
+    assert.ok(f.assist.finish()?.shape);
+  }
+});
+test('a held Pencil stroke can snap on release if the browser delayed its timer', () => {
+  const f = pencilFixture(circle());
+  f.advance(800, false);
+  assert.equal(f.assist.finish()?.shape.name, 'Circle');
+});
+
+test('sub-pixel resting noise does not become extra geometry or invalidate a Pencil line', () => {
+  const f = pencilFixture(line), end = line.at(-1);
+  for (let i = 0; i < 120; i++) {
+    f.advance(1000 / 120);
+    f.assist.move({ x: end.x + Math.sin(i * 1.7), y: end.y + Math.cos(i * 2.1) });
+  }
+  assert.equal(f.assist.finish()?.shape.name, 'Line');
 });

@@ -59,3 +59,25 @@ and corrected image states, Undo to the original, a second Undo to the exact
 background, Redo, and committing text to the canvas. This uses synthetic browser
 pen events; it does not substitute for physical Pencil testing. Portrait tablet
 windows now use the existing window bounds clamp through 1024 px width.
+
+## Pencil hold and Scribble follow-up
+
+A high-frequency stylus trace with small resting movements reproduced the
+reported snapping failure: the old 3 px movement threshold repeatedly restarted
+the timer, and the extra resting path also distorted recognition. Pen holds now
+use a 12 screen-pixel resting region (independent of zoom), exclude the resting
+tail from recognition, and tolerate small motion after snapping. A release-time
+hold check covers browsers that defer the hold callback during input. Original
+ink remains available in Undo. Regression traces at 120 samples/second and a
+delayed-callback case failed before this change and pass afterwards.
+
+The canvas area's generic pointer-down handler also blurred the active text
+editor and registered text input as a pan contact. It now leaves native editable
+fields alone. The live textarea displays its own text instead of an invisible
+text overlay; its bitmap remains for export, thumbnail, and history. The helper
+layer skips duplicate live text, while editor and frame allow native text
+interaction. Drawing canvas and resize handles retain touch-action: none.
+
+This fixes reproducible input/layout problems; actual iPadOS handwriting
+recognition still requires a physical iPad with Scribble enabled. Browser
+integration tests use synthetic pen events and cannot prove OS recognition.

@@ -301,3 +301,16 @@ test('canceling a pending hold cannot snap a later stroke', async () => {
   assert.equal(f.strokes.length, 2);
   assert.equal(f.context.pointers.length, 0);
 });
+
+test('Pencil input in a text field keeps focus and never becomes a drawing or pan gesture', () => {
+  const f = fixture();
+  const editor = new f.context.HTMLElement();
+  let blurs = 0;
+  editor.blur = () => blurs++;
+  f.context.document.activeElement = editor;
+  f.context.$canvas_area.emit({ type: 'pointerdown', pointerType: 'pen', pointerId: 42,
+    target: { closest: () => editor }, clientX: 40, clientY: 60 });
+  assert.equal(blurs, 0);
+  assert.equal(f.context.pointers.length, 0);
+  assert.equal(f.strokes.length, 0);
+});

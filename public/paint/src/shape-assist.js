@@ -82,41 +82,58 @@ export const shapeSnapSettings = {
 };
 try { shapeSnapSettings.enabled = localStorage.getItem('paint.draw-and-hold') !== 'false'; } catch { /* Use the default. */ }
 
-export function createShapeAssist({ start, scale = 1, render, status = () => {}, enabled = () => shapeSnapSettings.enabled,
-	setTimer = setTimeout, clearTimer = clearTimeout }) {
+export function createShapeAssist({ start, scale = 1, pointerType = "mouse", render, status = () => {}, enabled = () => shapeSnapSettings.enabled,
+	setTimer = setTimeout, clearTimer = clearTimeout, now = () => performance.now() }) {
 	const ink = [{ ...start }];
-	let anchor = start, timer, snapped = null, active = true;
+	// A resting Pencil still reports many tiny moves. Treat these as a hold,
+	// and keep their accumulated path length out of geometry recognition.
+	const restingRadius = (pointerType === "pen" ? 12 : pointerType === "touch" ? 9 : 4) / scale;
+	const releaseRadius = (pointerType === "pen" ? 18 : 10) / scale;
+	let anchor = { ...start }, stableIndex = 0, stableSince = null;
+	let timer, snapped = null, active = true;
 	const clear = () => { clearTimer(timer); timer = undefined; };
+	const snap = () => {
+		if (!active || !enabled() || snapped) return;
+		const geometry = ink.slice(0, stableIndex + 1);
+		geometry.push(ink[ink.length - 1]);
+		const shape = recognizeShape(geometry, 18 / scale);
+		if (!shape) return;
+		snapped = shape;
+		anchor = { ...ink[ink.length - 1] };
+		render(shape.points);
+		status(`${shape.name} snapped. Lift to keep it; Undo restores your drawing.`);
+	};
 	const arm = () => {
 		clear();
 		if (!enabled()) return;
-		timer = setTimer(() => {
-			if (!active || !enabled()) return;
-			const shape = recognizeShape(ink, 18 / scale);
-			if (!shape) return;
-			snapped = shape;
-			render(shape.points);
-			status(`${shape.name} snapped. Lift to keep it; Undo restores your drawing.`);
-		}, 650);
+		stableSince = now();
+		timer = setTimer(snap, 650);
 	};
 	return {
 		move(point) {
 			if (!active) return false;
 			if (!enabled()) {
-				clear();
+				clear(); stableSince = null;
 				if (snapped) { snapped = null; render(ink); }
 			}
-			if (snapped && distance(anchor, point) <= 8 / scale) return true;
+			if (snapped && distance(anchor, point) <= releaseRadius) return true;
 			const restoring = !!snapped;
 			if (snapped) { snapped = null; status('Keep drawing. Hold at the end to snap.'); }
 			if (distance(ink[ink.length - 1], point) > 0.1 / scale) ink.push({ ...point });
 			// Bound memory for long freehand strokes; abandon recognition instead of dropping ink.
 			if (ink.length > 12000) { active = false; clear(); return false; }
 			if (restoring) render(ink);
-			if (distance(anchor, point) > 3 / scale) { anchor = { ...point }; arm(); }
+			if (restoring || distance(anchor, point) > restingRadius) {
+				anchor = { ...point };
+				stableIndex = ink.length - 1;
+				arm();
+			}
 			return restoring;
 		},
 		finish(keep = true) {
+			// iPad can postpone a timer during native input. Check the hold duration
+			// on release too, instead of silently discarding an otherwise valid hold.
+			if (keep && !snapped && stableSince !== null && now() - stableSince >= 650) snap();
 			clear(); active = false;
 			if (!keep && snapped) render(ink);
 			return keep && snapped ? { shape: snapped, original: ink } : null;

@@ -352,7 +352,7 @@ function render_canvas_view(hcanvas, scale, viewport_x, viewport_y, is_helper_la
 		}
 	}
 
-	if (textbox) {
+	if (textbox && (!is_helper_layer || !textbox.native_text_editor)) {
 		hctx.save();
 
 		hctx.scale(scale, scale);
