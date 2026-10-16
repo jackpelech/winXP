@@ -241,8 +241,6 @@ function WinXP() {
       dispatch({ type: ADD_APP, payload: appSettings['My Computer'] });
     else if (o === 'Notepad')
       dispatch({ type: ADD_APP, payload: appSettings.Notepad });
-    else if (o === 'Winamp')
-      dispatch({ type: ADD_APP, payload: appSettings.Winamp });
     else if (o === 'Paint')
       dispatch({ type: ADD_APP, payload: appSettings.Paint });
     else if (o === 'Log Off')
