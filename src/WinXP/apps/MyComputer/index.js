@@ -106,7 +106,8 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
   }
   function openItem(item) {
     if (item.type === 'folder') openLocation(item.location);
-    else if (item.type === 'text') onOpenFile(item);
+    else if (item.type === 'text' || item.type === 'application')
+      onOpenFile(item);
   }
   function navigationProps(label, enabled, onNavigate) {
     return {

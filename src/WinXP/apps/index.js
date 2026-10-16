@@ -4,6 +4,7 @@ import ErrorBox from './ErrorBox';
 import MyComputer from './MyComputer';
 import Notepad from './Notepad';
 import Paint from './Paint';
+import { HopscotchIntro, FramesIntro } from './ProjectIntro';
 import { hopscotchProject, framesProject } from '../projects';
 import iePaper from 'assets/windowsIcons/ie-paper.png';
 import ie from 'assets/windowsIcons/ie.png';
@@ -100,19 +101,59 @@ export const defaultIconState = [
     icon: hopscotchProject.desktopIcon,
     imageRendering: hopscotchProject.imageRendering,
     title: hopscotchProject.name,
-    component: null,
+    component: HopscotchIntro,
     isFocus: false,
   },
   {
     id: 6,
     icon: framesProject.desktopIcon,
     title: framesProject.name,
-    component: null,
+    component: FramesIntro,
     isFocus: false,
   },
 ];
 
 export const appSettings = {
+  Hopscotch: {
+    header: {
+      icon: hopscotchProject.desktopIcon,
+      title: 'Hopscotch',
+      buttons: ['close'],
+    },
+    component: HopscotchIntro,
+    defaultSize: {
+      width: Math.min(560, window.innerWidth - 20),
+      height: Math.min(390, window.innerHeight - 70),
+    },
+    defaultOffset: {
+      x: Math.max(10, (window.innerWidth - 560) / 2),
+      y: Math.max(20, (window.innerHeight - 420) / 2),
+    },
+    resizable: false,
+    minimized: false,
+    maximized: false,
+    multiInstance: false,
+  },
+  Frames: {
+    header: {
+      icon: framesProject.desktopIcon,
+      title: 'Frames',
+      buttons: ['close'],
+    },
+    component: FramesIntro,
+    defaultSize: {
+      width: Math.min(560, window.innerWidth - 20),
+      height: Math.min(390, window.innerHeight - 70),
+    },
+    defaultOffset: {
+      x: Math.max(10, (window.innerWidth - 560) / 2),
+      y: Math.max(20, (window.innerHeight - 420) / 2),
+    },
+    resizable: false,
+    minimized: false,
+    maximized: false,
+    multiInstance: false,
+  },
   'Internet Explorer': {
     header: {
       icon: iePaper,

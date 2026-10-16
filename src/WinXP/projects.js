@@ -1,6 +1,7 @@
 import hopscotchIcon from 'assets/projects/hopscotch-xp-48.png';
 import hopscotchDesktopIcon from 'assets/projects/hopscotch-xp-32.png';
 import framesIcon from 'assets/projects/frames.png';
+import framesPanel from 'assets/projects/frames-panel.png';
 
 export const hopscotchProject = {
   name: 'Hopscotch',
@@ -15,4 +16,5 @@ export const framesProject = {
   type: 'application',
   icon: framesIcon,
   desktopIcon: framesIcon,
+  panelImage: framesPanel,
 };
