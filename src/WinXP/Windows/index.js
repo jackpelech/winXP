@@ -196,6 +196,7 @@ const Window = memo(function({
         {component({
           onClose: _onMouseUpClose,
           onMinimize: _onMouseUpMinimize,
+          onFocus: _onMouseDown,
           isFocus,
           onOpenLocation,
           onOpenFile,

@@ -192,6 +192,20 @@ export function createWorker(
       }
       const asset =
         assets[path] || assets[`${path.replace(/\/$/, '')}/index.html`];
+      if (
+        !asset &&
+        /^\/paint\/(?:lib|styles|images|help|localization|audio)\//.test(path)
+      ) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `https://cdn.jsdelivr.net/gh/1j01/jspaint@53be67ab8c47cc0d2168899e7481bc04839c4c81/${path.slice(
+              '/paint/'.length,
+            )}`,
+            'Cache-Control': 'no-cache',
+          },
+        });
+      }
       if (!asset) return new Response('Not found', { status: 404 });
       const bytes = Uint8Array.from(atob(asset.content), c => c.charCodeAt(0));
       return new Response(request.method === 'HEAD' ? null : bytes, {
