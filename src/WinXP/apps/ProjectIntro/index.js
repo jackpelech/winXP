@@ -72,6 +72,14 @@ function ProjectIntro({ project, onClose, isFocus }) {
               </div>
             </>
           )}
+          {project.panelImage && project.showPanelIcon && (
+            <img
+              className="intro__panel-logo"
+              src={project.icon}
+              alt=""
+              style={{ imageRendering: project.imageRendering }}
+            />
+          )}
         </aside>
         <main className="intro__content">
           <h1 className="intro__heading">
@@ -169,6 +177,14 @@ const Div = styled.section`
     border: 3px solid #fff;
     background: #081e62;
     box-shadow: 1px 1px #020b2b;
+  }
+  .intro__panel-logo {
+    position: absolute;
+    top: 24px;
+    right: 21px;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
   }
   .intro__icon {
     width: 48px;

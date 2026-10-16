@@ -11,6 +11,7 @@ export const hopscotchProject = {
   desktopIcon: hopscotchDesktopIcon,
   imageRendering: 'pixelated',
   panelImage: hopscotchPanel,
+  showPanelIcon: true,
 };
 
 export const framesProject = {
