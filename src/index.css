@@ -1,4 +1,5 @@
 :root {
+  --desktop-wallpaper: url('./assets/wallpaper.jpg');
   --desktop-safe-top: env(safe-area-inset-top, 0px);
   --desktop-safe-right: env(safe-area-inset-right, 0px);
   --desktop-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -13,7 +14,29 @@ body,
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+html {
+  background-color: #7ebbe7;
+  background-image: linear-gradient(
+      to bottom,
+      transparent calc(100% - var(--desktop-taskbar-height)),
+      #245edc calc(100% - var(--desktop-taskbar-height))
+    ),
+    var(--desktop-wallpaper);
+  background-size: 100% var(--desktop-viewport-height, 100vh), cover;
+  background-position: 0 var(--desktop-viewport-top, 0px), center center;
+  background-repeat: no-repeat;
+}
+
+html[data-desktop-surface='app'] {
   background-color: #245edc;
+  background-image: none;
+}
+
+body,
+#root {
+  background: transparent;
 }
 
 body {

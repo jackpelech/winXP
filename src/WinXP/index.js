@@ -1,8 +1,8 @@
 import React, { useReducer, useRef, useCallback } from 'react';
 import styled, { keyframes } from 'styled-components';
-import wallpaper from 'assets/wallpaper.jpg';
 import useMouse from 'react-use/lib/useMouse';
 import useDesktopViewport from 'hooks/useDesktopViewport';
+import useDesktopAppearance from 'hooks/useDesktopAppearance';
 
 import {
   ADD_APP,
@@ -197,6 +197,7 @@ function WinXP() {
     docY: mousePosition.elY,
   };
   const focusedAppId = getFocusedAppId();
+  useDesktopAppearance(state.apps.some(app => app.maximized && !app.minimized));
   const onFocusApp = useCallback(id => {
     dispatch({ type: FOCUS_APP, payload: id });
   }, []);
@@ -418,8 +419,11 @@ const Container = styled.div`
   height: 100%;
   overflow: hidden;
   position: relative;
-  background: url(${wallpaper}) no-repeat center center;
+  background: transparent;
+  background-image: ${({ state }) =>
+    state === POWER_STATE.START ? 'none' : 'var(--desktop-wallpaper)'};
   background-size: cover;
+  background-position: center;
   overscroll-behavior: none;
   .desktop__work-area {
     position: absolute;
