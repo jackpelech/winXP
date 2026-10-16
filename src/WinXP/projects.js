@@ -1,5 +1,6 @@
 import hopscotchIcon from 'assets/projects/hopscotch-xp-48.png';
 import hopscotchDesktopIcon from 'assets/projects/hopscotch-xp-32.png';
+import hopscotchPanel from 'assets/projects/hopscotch-panel.png';
 import framesIcon from 'assets/projects/frames.png';
 import framesPanel from 'assets/projects/frames-panel.png';
 
@@ -9,6 +10,7 @@ export const hopscotchProject = {
   icon: hopscotchIcon,
   desktopIcon: hopscotchDesktopIcon,
   imageRendering: 'pixelated',
+  panelImage: hopscotchPanel,
 };
 
 export const framesProject = {
