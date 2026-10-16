@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 import { WindowDropDowns } from 'components';
 import dropDownData from './dropDownData';
+import sampleFolders from './sampleFiles';
 import go from 'assets/windowsIcons/290.png';
 import search from 'assets/windowsIcons/299(32x32).png';
 import computer from 'assets/windowsIcons/676(16x16).png';
@@ -23,15 +24,30 @@ import cd from 'assets/windowsIcons/111(48x48).png';
 import dropdown from 'assets/windowsIcons/dropdown.png';
 import pullup from 'assets/windowsIcons/pullup.png';
 import windows from 'assets/windowsIcons/windows.png';
+import textDocument from 'assets/windowsIcons/327(32x32).png';
 
-function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
+function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
   const [selectedItem, setSelectedItem] = useState('');
   const [history, setHistory] = useState({
     locations: ['My Computer'],
     index: 0,
   });
-  const title = history.locations[history.index];
-  const sharedFolder = title === 'Shared Documents';
+  const currentLocation = history.locations[history.index];
+  const currentFolder = sampleFolders[currentLocation];
+  const title = currentFolder ? currentFolder.name : currentLocation;
+  const sharedFolder = Boolean(currentFolder);
+  const parentLocation = currentFolder && currentFolder.parent;
+  const parentTitle = sampleFolders[parentLocation]
+    ? sampleFolders[parentLocation].name
+    : parentLocation;
+  const selectedFile =
+    currentFolder &&
+    currentFolder.items.find(item => item.name === selectedItem);
+  const otherPlace = sharedFolder
+    ? parentLocation === 'My Computer'
+      ? 'My Network Places'
+      : 'My Computer'
+    : 'Shared Documents';
   const canGoBack = history.index > 0;
   const canGoForward = history.index < history.locations.length - 1;
   const menuItems = {
@@ -59,16 +75,16 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
     setHistory(nextHistory);
     setSelectedItem('');
     onChangeHeader({
-      title: location,
-      icon: location === 'Shared Documents' ? folderSmall : computer,
+      title: sampleFolders[location] ? sampleFolders[location].name : location,
+      icon: sampleFolders[location] ? folderSmall : computer,
     });
   }
   function openLocation(location) {
-    if (location !== 'My Computer' && location !== 'Shared Documents') {
+    if (location !== 'My Computer' && !sampleFolders[location]) {
       onOpenLocation(location);
       return;
     }
-    if (location === title) return;
+    if (location === currentLocation) return;
     const locations = history.locations.slice(0, history.index + 1);
     locations.push(location);
     updateLocation({ locations, index: locations.length - 1 });
@@ -80,7 +96,7 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
     if (canGoForward) updateLocation({ ...history, index: history.index + 1 });
   }
   function goUp() {
-    if (sharedFolder) openLocation('My Computer');
+    if (sharedFolder) openLocation(parentLocation);
   }
   function navigationProps(label, enabled, onNavigate) {
     return {
@@ -110,8 +126,8 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
       goUp();
     }
   }
-  function actionProps(label, doubleClick = false) {
-    const open = () => openLocation(label);
+  function actionProps(label, doubleClick = false, onOpen) {
+    const open = onOpen || (() => openLocation(label));
     return {
       role: 'button',
       tabIndex: 0,
@@ -309,16 +325,26 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
                 <div
                   className="com__content__left__card__row"
                   {...actionProps(
-                    sharedFolder ? 'My Computer' : 'My Network Places',
+                    sharedFolder ? parentTitle : 'My Network Places',
+                    false,
+                    sharedFolder
+                      ? () => openLocation(parentLocation)
+                      : undefined,
                   )}
                 >
                   <img
                     className="com__content__left__card__img"
-                    src={sharedFolder ? computer : network}
+                    src={
+                      sharedFolder
+                        ? parentLocation === 'My Computer'
+                          ? computer
+                          : folderSmall
+                        : network
+                    }
                     alt="network"
                   />
                   <div className="com__content__left__card__text link">
-                    {sharedFolder ? 'My Computer' : 'My Network Places'}
+                    {sharedFolder ? parentTitle : 'My Network Places'}
                   </div>
                 </div>
                 <div
@@ -336,15 +362,21 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
                 </div>
                 <div
                   className="com__content__left__card__row"
-                  {...actionProps('Shared Documents')}
+                  {...actionProps(otherPlace)}
                 >
                   <img
                     className="com__content__left__card__img"
-                    src={folderSmall}
+                    src={
+                      otherPlace === 'My Computer'
+                        ? computer
+                        : otherPlace === 'My Network Places'
+                        ? network
+                        : folderSmall
+                    }
                     alt="folder"
                   />
                   <div className="com__content__left__card__text link">
-                    Shared Documents
+                    {otherPlace}
                   </div>
                 </div>
                 <div
@@ -381,7 +413,11 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
                 </div>
                 <div className="com__content__left__card__row">
                   <div className="com__content__left__card__text">
-                    {sharedFolder ? 'File folder' : 'System folder'}
+                    {selectedFile && selectedFile.type === 'text'
+                      ? 'Text Document'
+                      : sharedFolder
+                      ? 'File folder'
+                      : 'System folder'}
                   </div>
                 </div>
               </div>
@@ -389,7 +425,43 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
           </div>
           <div className="com__content__right">
             {sharedFolder ? (
-              <div className="com__folder-empty">This folder is empty.</div>
+              <div className="com__folder-items">
+                {currentFolder.items.map(item => (
+                  <div
+                    key={item.name}
+                    className="com__content__right__card__item com__file-item"
+                    {...actionProps(item.name, true, () =>
+                      item.type === 'folder'
+                        ? openLocation(item.location)
+                        : onOpenFile(item),
+                    )}
+                  >
+                    <img
+                      src={item.type === 'folder' ? folder : textDocument}
+                      alt=""
+                      className={`com__content__right__card__img${
+                        item.type === 'text' ? ' com__text-icon' : ''
+                      }`}
+                    />
+                    <div className="com__file-label">
+                      <div className="com__content__right__card__text">
+                        {item.name}
+                      </div>
+                      <div className="com__file-type">
+                        {item.type === 'folder'
+                          ? 'File folder'
+                          : 'Text Document'}
+                      </div>
+                      {item.type === 'text' && (
+                        <div className="com__file-type">
+                          {Math.max(1, Math.ceil(item.content.length / 1024))}{' '}
+                          KB
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 <div className="com__content__right__card">
@@ -478,7 +550,11 @@ function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
           </div>
         </div>
       </div>
-      {sharedFolder && <footer className="com__status-bar">0 objects</footer>}
+      {sharedFolder && (
+        <footer className="com__status-bar">
+          {currentFolder.items.length} objects
+        </footer>
+      )}
     </Div>
   );
 }
@@ -508,10 +584,36 @@ const Div = styled.div`
     .com__content__right__card__img {
     filter: sepia(1) saturate(3) hue-rotate(175deg);
   }
-  .com__folder-empty {
-    padding: 38px 20px;
-    text-align: center;
+  .com__folder-items {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    padding: 15px;
+    gap: 8px 5px;
+  }
+  .com__file-item {
+    min-height: 54px;
+    margin-bottom: 0;
+    padding: 3px;
+    font-size: 11px;
+  }
+  .com__file-label {
+    min-width: 0;
+  }
+  .com__file-label .com__content__right__card__text {
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding: 1px;
+  }
+  .com__file-type {
     color: #777;
+    line-height: 15px;
+    padding-left: 1px;
+  }
+  .com__file-item .com__text-icon {
+    width: 32px;
+    height: 32px;
+    margin: 6px 12px 6px 6px;
   }
   .com__status-bar {
     flex-shrink: 0;

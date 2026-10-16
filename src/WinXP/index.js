@@ -195,6 +195,19 @@ function WinXP() {
   const onChangeAppHeader = useCallback((id, header) => {
     dispatch({ type: UPDATE_APP_HEADER, payload: { id, header } });
   }, []);
+  const onOpenTextFile = useCallback(file => {
+    dispatch({
+      type: ADD_APP,
+      payload: {
+        ...appSettings.Notepad,
+        header: {
+          ...appSettings.Notepad.header,
+          title: `${file.name} - Notepad`,
+        },
+        injectProps: { initialText: file.content },
+      },
+    });
+  }, []);
   const onMaximizeWindow = useCallback(
     id => {
       if (focusedAppId === id) {
@@ -344,6 +357,7 @@ function WinXP() {
         onMaximize={onMaximizeWindow}
         focusedAppId={focusedAppId}
         onOpenLocation={onOpenLocation}
+        onOpenFile={onOpenTextFile}
         onChangeHeader={onChangeAppHeader}
       />
       <Footer

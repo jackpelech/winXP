@@ -4,8 +4,8 @@ import styled from 'styled-components';
 import { WindowDropDowns } from 'components';
 import dropDownData from './dropDownData';
 
-export default function Notepad({ onClose }) {
-  const [docText, setDocText] = useState('');
+export default function Notepad({ onClose, initialText = '' }) {
+  const [docText, setDocText] = useState(initialText);
   const [wordWrap, setWordWrap] = useState(false);
 
   function onClickOptionItem(item) {
@@ -49,6 +49,7 @@ export default function Notepad({ onClose }) {
         <WindowDropDowns items={dropDownData} onClickItem={onClickOptionItem} />
       </section>
       <StyledTextarea
+        aria-label="Document text"
         wordWrap={wordWrap}
         value={docText}
         onChange={e => setDocText(e.target.value)}

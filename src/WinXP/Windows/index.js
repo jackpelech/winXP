@@ -13,6 +13,7 @@ function Windows({
   onMaximize,
   focusedAppId,
   onOpenLocation,
+  onOpenFile,
   onChangeHeader,
 }) {
   return (
@@ -24,6 +25,7 @@ function Windows({
           id={app.id}
           onMouseDown={onMouseDown}
           onOpenLocation={onOpenLocation}
+          onOpenFile={onOpenFile}
           onChangeHeader={onChangeHeader}
           onMouseUpClose={onClose}
           onMouseUpMinimize={onMinimize}
@@ -41,6 +43,7 @@ const Window = memo(function({
   id,
   onMouseDown,
   onOpenLocation,
+  onOpenFile,
   onChangeHeader,
   onMouseUpClose,
   onMouseUpMinimize,
@@ -141,6 +144,7 @@ const Window = memo(function({
           onMinimize: _onMouseUpMinimize,
           isFocus,
           onOpenLocation,
+          onOpenFile,
           onChangeHeader: header => onChangeHeader(id, header),
           ...injectProps,
         })}
