@@ -50,6 +50,7 @@ function Icon({
   onMouseDown,
   onDoubleClick,
   icon,
+  imageRendering,
   className,
   id,
   component,
@@ -78,7 +79,12 @@ function Icon({
       ref={ref}
     >
       <div className={`${className}__img__container`}>
-        <img src={icon} alt={title} className={`${className}__img`} />
+        <img
+          src={icon}
+          alt={title}
+          className={`${className}__img`}
+          style={{ imageRendering }}
+        />
       </div>
       <div className={`${className}__text__container`}>
         <div className={`${className}__text`}>{title}</div>

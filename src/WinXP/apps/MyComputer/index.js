@@ -448,6 +448,7 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
                         (item.type === 'folder' ? folder : textDocument)
                       }
                       alt=""
+                      style={{ imageRendering: item.imageRendering }}
                       className={`com__content__right__card__img${
                         item.type === 'text' ? ' com__text-icon' : ''
                       }`}

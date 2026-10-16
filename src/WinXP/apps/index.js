@@ -130,7 +130,8 @@ export const defaultIconState = [
   },
   {
     id: 5,
-    icon: hopscotchProject.icon,
+    icon: hopscotchProject.desktopIcon,
+    imageRendering: hopscotchProject.imageRendering,
     title: hopscotchProject.name,
     component: null,
     isFocus: false,
