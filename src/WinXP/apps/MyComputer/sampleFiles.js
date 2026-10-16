@@ -1,4 +1,4 @@
-import { hopscotchProject } from '../../projects';
+import { hopscotchProject, framesProject } from '../../projects';
 
 const sampleFolders = {
   'Shared Documents': {
@@ -38,7 +38,7 @@ const sampleFolders = {
   'Shared Documents/Projects': {
     name: 'Projects',
     parent: 'Shared Documents',
-    items: [hopscotchProject],
+    items: [hopscotchProject, framesProject],
   },
   'Shared Documents/Sample Folder': {
     name: 'Sample Folder',

@@ -4,7 +4,7 @@ import ErrorBox from './ErrorBox';
 import MyComputer from './MyComputer';
 import Notepad from './Notepad';
 import Paint from './Paint';
-import { hopscotchProject } from '../projects';
+import { hopscotchProject, framesProject } from '../projects';
 import iePaper from 'assets/windowsIcons/ie-paper.png';
 import ie from 'assets/windowsIcons/ie.png';
 import mine from 'assets/minesweeper/mine-icon.png';
@@ -100,6 +100,13 @@ export const defaultIconState = [
     icon: hopscotchProject.desktopIcon,
     imageRendering: hopscotchProject.imageRendering,
     title: hopscotchProject.name,
+    component: null,
+    isFocus: false,
+  },
+  {
+    id: 6,
+    icon: framesProject.desktopIcon,
+    title: framesProject.name,
     component: null,
     isFocus: false,
   },
