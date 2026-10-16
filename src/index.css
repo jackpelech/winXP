@@ -5,6 +5,8 @@
   --desktop-safe-bottom: env(safe-area-inset-bottom, 0px);
   --desktop-safe-left: env(safe-area-inset-left, 0px);
   --desktop-taskbar-height: calc(30px + var(--desktop-safe-bottom));
+  --desktop-wallpaper-bleed-top: 0px;
+  --desktop-wallpaper-bleed-bottom: 0px;
 }
 
 html,
@@ -17,16 +19,7 @@ body,
 }
 
 html {
-  background-color: #7ebbe7;
-  background-image: linear-gradient(
-      to bottom,
-      transparent calc(100% - var(--desktop-taskbar-height)),
-      #245edc calc(100% - var(--desktop-taskbar-height))
-    ),
-    var(--desktop-wallpaper);
-  background-size: 100% var(--desktop-viewport-height, 100vh), cover;
-  background-position: 0 var(--desktop-viewport-top, 0px), center center;
-  background-repeat: no-repeat;
+  background: var(--desktop-wallpaper) center / cover no-repeat;
 }
 
 html[data-desktop-surface='app'] {
@@ -42,10 +35,54 @@ body,
 body {
   position: fixed;
   inset: 0;
+  isolation: isolate;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: calc(0px - var(--desktop-wallpaper-bleed-top));
+  right: calc(0px - var(--desktop-safe-right));
+  bottom: calc(0px - var(--desktop-wallpaper-bleed-bottom));
+  left: calc(0px - var(--desktop-safe-left));
+  z-index: -1;
+  pointer-events: none;
+  background: var(--desktop-wallpaper) center / cover no-repeat;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: calc(
+    var(--desktop-viewport-top, 0px) + var(--desktop-viewport-height, 100vh) -
+      var(--desktop-taskbar-height)
+  );
+  right: 0;
+  left: 0;
+  height: calc(
+    var(--desktop-taskbar-height) + var(--desktop-wallpaper-bleed-bottom) +
+      128px
+  );
+  z-index: -1;
+  pointer-events: none;
+  background: #245edc;
+}
+
+html[data-desktop-surface='app'] body::before {
+  background: #245edc;
+}
+
+@media (max-width: 767px), (pointer: coarse) and (max-height: 767px) {
+  :root {
+    /* Paint extra Bliss above the screen instead of filling it with a color. */
+    --desktop-wallpaper-bleed-top: calc(128px + var(--desktop-safe-top));
+    --desktop-wallpaper-bleed-bottom: var(--desktop-safe-bottom);
+  }
 }
 
 #root {
   position: fixed;
+  z-index: 0;
   top: var(--desktop-viewport-top, 0px);
   left: 0;
   height: var(--desktop-viewport-height, 100%);

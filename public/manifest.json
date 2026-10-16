@@ -9,6 +9,5 @@
     }
   ],
   "start_url": ".",
-  "display": "standalone",
-  "background_color": "#7ebbe7"
+  "display": "standalone"
 }
