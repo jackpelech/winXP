@@ -204,6 +204,22 @@ function WinXP() {
   const onChangeAppHeader = useCallback((id, header) => {
     dispatch({ type: UPDATE_APP_HEADER, payload: { id, header } });
   }, []);
+  const onOpenInBrowser = useCallback((path, title) => {
+    dispatch({
+      type: ADD_APP,
+      payload: {
+        ...appSettings['Internet Explorer'],
+        header: {
+          ...appSettings['Internet Explorer'].header,
+          title: `${title} - Microsoft Internet Explorer`,
+        },
+        injectProps: {
+          initialUrl: new URL(path, window.location.origin).href,
+          initialTitle: title,
+        },
+      },
+    });
+  }, []);
   const onOpenFile = useCallback(file => {
     if (file.type === 'application') {
       const appSetting = appSettings[file.name];
@@ -375,6 +391,7 @@ function WinXP() {
           focusedAppId={focusedAppId}
           onOpenLocation={onOpenLocation}
           onOpenFile={onOpenFile}
+          onOpenInBrowser={onOpenInBrowser}
           onChangeHeader={onChangeAppHeader}
         />
       </div>

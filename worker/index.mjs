@@ -190,7 +190,8 @@ export function createWorker(
           headers: { Allow: 'GET, HEAD' },
         });
       }
-      const asset = assets[path === '/' ? '/index.html' : path];
+      const asset =
+        assets[path] || assets[`${path.replace(/\/$/, '')}/index.html`];
       if (!asset) return new Response('Not found', { status: 404 });
       const bytes = Uint8Array.from(atob(asset.content), c => c.charCodeAt(0));
       return new Response(request.method === 'HEAD' ? null : bytes, {

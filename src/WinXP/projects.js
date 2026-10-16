@@ -20,4 +20,14 @@ export const framesProject = {
   icon: framesIcon,
   desktopIcon: framesIcon,
   panelImage: framesPanel,
+  description:
+    'Frames is an open-source window manager for macOS. Arrange your apps in nested layouts, group windows into tabs, and zoom from a single task to the full workspace.\n\nSave your favorite views, switch with keyboard shortcuts, and keep everything running locally on your Mac.',
+  actions: [
+    { label: 'View on GitHub' },
+    {
+      label: 'Learn More About Frames',
+      browserPath: '/frames/',
+      title: 'Frames',
+    },
+  ],
 };

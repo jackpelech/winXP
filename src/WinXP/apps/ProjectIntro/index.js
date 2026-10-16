@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { hopscotchProject, framesProject } from '../../projects';
 
-function ProjectIntro({ project, onClose, isFocus }) {
+function ProjectIntro({ project, onClose, isFocus, onOpenInBrowser }) {
   const dialog = useRef(null);
   useEffect(() => {
     if (isFocus && dialog.current) dialog.current.focus();
@@ -106,6 +106,15 @@ function ProjectIntro({ project, onClose, isFocus }) {
             >
               {action.label}
             </a>
+          ) : action.browserPath ? (
+            <button
+              key={action.label}
+              className="intro__button"
+              type="button"
+              onClick={() => onOpenInBrowser(action.browserPath, action.title)}
+            >
+              {action.label}
+            </button>
           ) : (
             <button
               key={action.label}
@@ -278,8 +287,14 @@ const Div = styled.section`
       font-size: 20px;
     }
     .intro__button {
-      min-width: 90px;
-      padding: 3px 10px;
+      flex: 1;
+      min-width: 0;
+      min-height: 28px;
+      height: auto;
+      padding: 3px 8px;
+      white-space: normal;
+      text-align: center;
+      line-height: 14px;
     }
   }
 `;

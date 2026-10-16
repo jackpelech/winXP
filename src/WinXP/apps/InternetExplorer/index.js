@@ -22,21 +22,66 @@ import stop from 'assets/windowsIcons/stop.png';
 import windows from 'assets/windowsIcons/windows.png';
 import dropdown from 'assets/windowsIcons/dropdown.png';
 
-function InternetExplorer({ onClose }) {
-  const [state, setState] = useState({
-    route: 'main',
-    query: '',
-  });
+function InternetExplorer({
+  onClose,
+  onChangeHeader,
+  initialUrl,
+  initialTitle,
+}) {
+  const [navigation, setNavigation] = useState(() => ({
+    entries: [
+      initialUrl
+        ? {
+            route: 'website',
+            url: initialUrl,
+            title: initialTitle || 'Website',
+          }
+        : { route: 'main', query: '' },
+    ],
+    index: 0,
+  }));
+  const [refreshCount, setRefreshCount] = useState(0);
+  const state = navigation.entries[navigation.index];
+  const canGoBack = navigation.index > 0;
+  const canGoForward = navigation.index < navigation.entries.length - 1;
+  function updateTitle(location) {
+    if (onChangeHeader)
+      onChangeHeader({
+        title:
+          location.route === 'website'
+            ? `${location.title} - Microsoft Internet Explorer`
+            : 'Internet Explorer',
+      });
+  }
+  function navigate(location) {
+    setNavigation(current => ({
+      entries: [...current.entries.slice(0, current.index + 1), location],
+      index: current.index + 1,
+    }));
+    updateTitle(location);
+  }
+  function goToHistory(index) {
+    if (index < 0 || index >= navigation.entries.length) return;
+    setNavigation({ ...navigation, index });
+    updateTitle(navigation.entries[index]);
+  }
+  function goBack() {
+    goToHistory(navigation.index - 1);
+  }
+  function goForward() {
+    goToHistory(navigation.index + 1);
+  }
   function onSearch(str) {
     if (str.length) {
-      setState({
+      navigate({
         route: 'search',
         query: str,
       });
     }
   }
   function goMain() {
-    setState({
+    if (state.route === 'main') return;
+    navigate({
       route: 'main',
       query: '',
     });
@@ -47,8 +92,13 @@ function InternetExplorer({ onClose }) {
         onClose();
         break;
       case 'Home Page':
-      case 'Back':
         goMain();
+        break;
+      case 'Back':
+        goBack();
+        break;
+      case 'Forward':
+        goForward();
         break;
       default:
     }
@@ -66,33 +116,52 @@ function InternetExplorer({ onClose }) {
         <img className="ie__windows-logo" src={windows} alt="windows" />
       </section>
       <section className="ie__function_bar">
-        <div
-          onClick={goMain}
-          className={`ie__function_bar__button${
-            state.route === 'main' ? '--disable' : ''
-          }`}
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={goBack}
+          disabled={!canGoBack}
+          className={`ie__function_bar__button${canGoBack ? '' : '--disable'}`}
         >
           <img className="ie__function_bar__icon" src={back} alt="" />
           <span className="ie__function_bar__text">Back</span>
           <div className="ie__function_bar__arrow" />
-        </div>
-        <div className="ie__function_bar__button--disable">
+        </button>
+        <button
+          type="button"
+          aria-label="Forward"
+          onClick={goForward}
+          disabled={!canGoForward}
+          className={`ie__function_bar__button${
+            canGoForward ? '' : '--disable'
+          }`}
+        >
           <img className="ie__function_bar__icon" src={forward} alt="" />
           <div className="ie__function_bar__arrow" />
-        </div>
+        </button>
         <div className="ie__function_bar__button">
           <img className="ie__function_bar__icon--margin-1" src={stop} alt="" />
         </div>
-        <div className="ie__function_bar__button">
+        <button
+          type="button"
+          aria-label="Refresh"
+          className="ie__function_bar__button"
+          onClick={() => setRefreshCount(count => count + 1)}
+        >
           <img
             className="ie__function_bar__icon--margin-1"
             src={refresh}
             alt=""
           />
-        </div>
-        <div className="ie__function_bar__button" onClick={goMain}>
+        </button>
+        <button
+          type="button"
+          aria-label="Home"
+          className="ie__function_bar__button"
+          onClick={goMain}
+        >
           <img className="ie__function_bar__icon--margin-1" src={home} alt="" />
-        </div>
+        </button>
         <div className="ie__function_bar__separate" />
         <div className="ie__function_bar__button">
           <img
@@ -137,11 +206,13 @@ function InternetExplorer({ onClose }) {
         <div className="ie__address_bar__content">
           <img src={ie} alt="ie" className="ie__address_bar__content__img" />
           <div className="ie__address_bar__content__text">
-            {`https://www.google.com${
-              state.route === 'search'
-                ? `/search?q=${encodeURIComponent(state.query)}`
-                : ''
-            }`}
+            {state.route === 'website'
+              ? state.url
+              : `https://www.google.com${
+                  state.route === 'search'
+                    ? `/search?q=${encodeURIComponent(state.query)}`
+                    : ''
+                }`}
           </div>
           <img
             src={dropdown}
@@ -165,12 +236,22 @@ function InternetExplorer({ onClose }) {
       </section>
       <div className="ie__content">
         <div className="ie__content__inner">
-          <Google
-            route={state.route}
-            query={state.query}
-            onSearch={onSearch}
-            goMain={goMain}
-          />
+          {state.route === 'website' ? (
+            <iframe
+              key={`${state.url}-${refreshCount}`}
+              className="ie__website"
+              title={`${state.title} website`}
+              src={state.url}
+            />
+          ) : (
+            <Google
+              key={refreshCount}
+              route={state.route}
+              query={state.query}
+              onSearch={onSearch}
+              goMain={goMain}
+            />
+          )}
         </div>
       </div>
       <footer className="ie__footer">
@@ -258,6 +339,19 @@ const Div = styled.div`
     height: 100%;
     align-items: center;
     border: 1px solid rgba(0, 0, 0, 0);
+  }
+  button.ie__function_bar__button,
+  button.ie__function_bar__button--disable {
+    flex-shrink: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    border: 1px solid transparent;
+  }
+  button.ie__function_bar__button:focus-visible {
+    outline: 1px dotted #111;
+    outline-offset: -3px;
   }
   .ie__function_bar__text {
     margin-right: 4px;
@@ -405,6 +499,13 @@ const Div = styled.div`
     position: relative;
     width: 100%;
     height: 100%;
+  }
+  .ie__website {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: white;
   }
   .ie__footer {
     flex-shrink: 0;
