@@ -18,7 +18,8 @@ import { showMessageBox } from "./msgbox.js";
 import { stopSimulatingGestures } from "./simulate-random-gestures.js";
 import { disable_speech_recognition, enable_speech_recognition, trace_and_sketch_stop } from "./speech-recognition.js";
 import { localStore } from "./storage.js";
-import { createShapeAssist } from "./shape-assist.js";
+import { createShapeAssist, shapeSnapSettings } from "./shape-assist.js";
+import { pencilDiagnostics } from "./pencil-diagnostics.js";
 import { get_theme, set_theme } from "./theme.js";
 import { TOOL_AIRBRUSH, TOOL_BRUSH, TOOL_CURVE, TOOL_ELLIPSE, TOOL_ERASER, TOOL_LINE, TOOL_PENCIL, TOOL_POLYGON, TOOL_RECTANGLE, TOOL_ROUNDED_RECTANGLE, TOOL_SELECT, tools } from "./tools.js";
 
@@ -1400,6 +1401,7 @@ function pen_is_down() {
 }
 function canvas_pointer_move(e) {
  if (!pointer_is_drawing_owner(e)) return;
+ pencilDiagnostics.move();
  const native = e.originalEvent || e;
  let samples = [];
  if (pointer_type === "pen" && selected_tools.every((tool) => [TOOL_PENCIL, TOOL_BRUSH, TOOL_ERASER].includes(tool.id))) {
@@ -1580,7 +1582,7 @@ $canvas_area.on("pointerdown", (event) => {
 		return;
 	}
 });
-$G.on("pointerup pointercancel lostpointercapture", (event) => {
+$G.on("pointerup pointercancel", (event) => {
  // Synthetic tool cancellation keeps touch contacts for two-finger panning.
  if (event.pointerId === undefined) return;
  // A palm release is not the end of a Pencil stroke.
@@ -1689,6 +1691,7 @@ $canvas.on("pointerdown", (e) => {
 	}
 
  drawing_pointer_id = e.pointerId ?? null;
+ pencilDiagnostics.start(e, selected_tool, shapeSnapSettings.enabled);
  if (e.pointerType === "pen" && main_canvas.setPointerCapture && e.pointerId !== undefined) {
   try { main_canvas.setPointerCapture(e.pointerId); } catch { /* Synthetic events have no active browser pointer. */ }
  }
@@ -1715,6 +1718,7 @@ $canvas.on("pointerdown", (e) => {
 			const tool = selected_tool;
 			shape_assist = createShapeAssist({
 				start: pointer_start, scale: magnification, pointerType: pointer_type,
+				onState(state) { pencilDiagnostics.state(state); },
 				render(points) { tool.replace_stroke_points(points); update_helper_layer(); },
 				status(message) { $status_text.text(message); },
 			});
@@ -1724,15 +1728,21 @@ $canvas.on("pointerdown", (e) => {
   const stroke_pointer_id = drawing_pointer_id;
   function finish_stroke(e, canceling, no_undoable) {
    if (e.pointerId !== undefined && stroke_pointer_id !== null && e.pointerId !== stroke_pointer_id) return;
+   // Capture loss changes event routing; it does not mean the tip was lifted.
+   // Keep the global move/up listeners and Pencil ownership until an actual end.
+   if (e.type === "lostpointercapture" && pointer_type === "pen") return;
    $G.off("pointerup pointercancel lostpointercapture", finish_stroke);
+   // Resolve the hold before processing lift-off coordinates. The release point
+   // must not turn a previewed shape back into freehand ink.
+   const snapped = shape_assist?.finish(!canceling && !no_undoable && e.type === "pointerup");
+   shape_assist = null;
    // Include the release position; a short stroke may have no final pointermove.
-   if (!canceling && e.type === "pointerup" && pointer_type === "pen" && e.clientX !== undefined) {
+   if (!snapped && !canceling && e.type === "pointerup" && pointer_type === "pen" && e.clientX !== undefined) {
     canvas_pointer_move_point({ clientX: e.clientX, clientY: e.clientY,
      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, button: -1, buttons: pointer_buttons,
      pointerId: stroke_pointer_id, pointerType: pointer_type });
    }
-   const snapped = shape_assist?.finish(!canceling && !no_undoable && e.type === "pointerup");
-   shape_assist = null;
+   pencilDiagnostics.finish(e.type, snapped);
    drawing_pointer_id = null;
    pointer_active = false;
    if (main_canvas.hasPointerCapture?.(stroke_pointer_id)) main_canvas.releasePointerCapture(stroke_pointer_id);

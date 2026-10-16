@@ -10,8 +10,8 @@ and module instances stay consistent.
 
 The local changes in `app.js` give a drawing stroke a pointer owner, prioritize
 pen contact over palm/touch contact, process coalesced freehand pen samples,
-include the pen-up position, capture the pen, and finish on cancellation,
-capture loss, or blur. A new pen-down recovers a missing prior release.
+include the pen-up position, capture the pen, and finish on cancellation or blur. Capture loss keeps the active Pencil stroke
+alive until a real release. A new pen-down recovers a missing prior release.
 Mouse quick-undo and two-finger touch pan/zoom remain in place.
 
 The React wrapper focuses its XP window directly from the frame's document.
@@ -21,7 +21,7 @@ known directories redirect to the pinned CDN, which the upstream CSP permits. Th
 
 `node --test scripts/paint-input.test.mjs` exercises the actual patched canvas
 event handlers with a drawing-tool fixture, including palm contact, repeated
-strokes, cancel/capture loss, coalesced points, and final pen-up coordinates.
+strokes, cancel/capture routing, coalesced points, and final pen-up coordinates.
 Physical Apple Pencil and iPadOS behavior still requires a device check.
 
 ## Shape snapping and iPad text
@@ -81,3 +81,22 @@ interaction. Drawing canvas and resize handles retain touch-action: none.
 This fixes reproducible input/layout problems; actual iPadOS handwriting
 recognition still requires a physical iPad with Scribble enabled. Browser
 integration tests use synthetic pen events and cannot prove OS recognition.
+
+
+## Capture and lift-off correction
+
+Pencil capture loss no longer removes its active contact or finishes its stroke.
+Capture can change without the tip being lifted; global move/up listeners keep
+handling the owned Pencil until release, cancellation, blur, or a replacement
+contact. Also, shape assist resolves the hold before the pen-up coordinates are
+processed. A lift-off coordinate change cannot revert a corrected preview.
+Regression tests cover capture loss mid-stroke followed by a hold, and a snapped
+line followed by a widely displaced release point.
+
+Help > Pencil Diagnostics shows a local-only summary of the latest canvas
+gesture: build, browser, reported input type, button state, native event counts,
+Paint's handler/recognition counts, hold duration, completion event, and outcome.
+The report excludes positions, drawn ink, text, images, and document contents.
+It is neither stored nor transmitted; Copy report is a user-invoked clipboard
+action. This allows real-device failures to be diagnosed without treating
+synthetic pen-event checks as physical Apple Pencil verification.

@@ -15,6 +15,7 @@ import { simulateRandomGesturesPeriodically, simulatingGestures, stopSimulatingG
 import { speech_recognition_active, speech_recognition_available } from "./speech-recognition.js";
 import { get_theme, set_theme } from "./theme.js";
 import { shapeSnapSettings } from "./shape-assist.js";
+import { pencilDiagnostics } from "./pencil-diagnostics.js";
 
 const looksLikeChrome = !!(window.chrome && (window.chrome.loadTimes || window.chrome.csi));
 // NOTE: Microsoft Edge includes window.chrome.app
@@ -788,6 +789,27 @@ const menus = {
 			],
 			action: () => { show_help(); },
 			description: localize("Displays Help for the current task or command."),
+		},
+		{
+			label: "&Pencil Diagnostics...",
+			description: "Show a local input report for the last Apple Pencil stroke.",
+			action: () => {
+				const report = pencilDiagnostics.report();
+				const box = showMessageBox({ title: "Pencil diagnostics", message: "Draw a shape with the Pencil, then use this report to check what Paint received.", buttons: [{ label: "Close", value: "close", default: true }] });
+				const area = document.createElement("textarea");
+				area.value = report;
+				area.readOnly = true;
+				area.setAttribute("aria-label", "Pencil diagnostic report");
+				area.style.cssText = "display:block;width:350px;max-width:100%;height:215px;margin:10px 0;font:12px monospace;box-sizing:border-box;user-select:text;-webkit-user-select:text;";
+				const copy = document.createElement("button");
+				copy.textContent = "Copy report";
+				copy.onclick = async () => {
+					try { await navigator.clipboard.writeText(report); copy.textContent = "Copied"; }
+					catch { area.focus(); area.select(); copy.textContent = "Select and copy the report"; }
+				};
+				box.$message.append(area, copy);
+				box.$window.applyBounds();
+			},
 		},
 		MENU_DIVIDER,
 		{

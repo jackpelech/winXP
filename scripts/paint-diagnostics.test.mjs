@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const source = readFileSync(new URL('../public/paint/src/pencil-diagnostics.js', import.meta.url), 'utf8');
+const {createPencilDiagnostics} = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+test('local Pencil report distinguishes native capture events from drawing completion', () => {
+ let time = 0;
+ const d = createPencilDiagnostics(() => time);
+ const event = {pointerId: 4, pointerType:'pen', button:0, buttons:1, target:{closest:()=>true}};
+ d.native({...event,type:'pointerdown',clientX:12345,clientY:67890});
+ d.start(event,{name:'Pencil'},true);
+ d.native({...event,type:'lostpointercapture'});
+ d.move(); time = 800;
+ d.state({attempts:1,recognition:'Circle',holdMs:800});
+ d.native({...event,type:'pointerup'});
+ d.finish('pointerup',{shape:{name:'Circle'}});
+ time=9000; d.native({...event,type:'pointerdown',target:{closest:()=>false}}); d.native({...event,type:'pointerup'}); d.native({...event,type:'pointermove'}); d.native({...event,type:'lostpointercapture'});
+ const report = d.report('Test browser');
+ assert.match(report,/lostpointercapture=2/);
+ assert.match(report,/Duration: 800 ms/);
+ assert.match(report,/pointerdown=1/);
+ assert.match(report,/pointerup=1/);
+ assert.doesNotMatch(report,/pointermove=1/);
+ assert.match(report,/Ended by: pointerup/);
+ assert.match(report,/Result: Snapped Circle/);
+ assert.match(report,/button=0; buttons=1/);
+ assert.doesNotMatch(report,/12345|67890/);
+});
+test('a missing drawing start and a misidentified stylus remain visible in the report', () => {
+ const d=createPencilDiagnostics(()=>0);
+ d.native({type:'pointerdown',pointerId:2,pointerType:'touch',target:{closest:()=>true}});
+ assert.match(d.report('Test'),/Native input: touch/);
+ assert.match(d.report('Test'),/Tool: Not reached/);
+});

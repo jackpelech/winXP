@@ -83,20 +83,21 @@ export const shapeSnapSettings = {
 try { shapeSnapSettings.enabled = localStorage.getItem('paint.draw-and-hold') !== 'false'; } catch { /* Use the default. */ }
 
 export function createShapeAssist({ start, scale = 1, pointerType = "mouse", render, status = () => {}, enabled = () => shapeSnapSettings.enabled,
-	setTimer = setTimeout, clearTimer = clearTimeout, now = () => performance.now() }) {
+	setTimer = setTimeout, clearTimer = clearTimeout, now = () => performance.now(), onState = () => {} }) {
 	const ink = [{ ...start }];
 	// A resting Pencil still reports many tiny moves. Treat these as a hold,
 	// and keep their accumulated path length out of geometry recognition.
 	const restingRadius = (pointerType === "pen" ? 12 : pointerType === "touch" ? 9 : 4) / scale;
 	const releaseRadius = (pointerType === "pen" ? 18 : 10) / scale;
 	let anchor = { ...start }, stableIndex = 0, stableSince = null;
-	let timer, snapped = null, active = true;
+	let timer, snapped = null, active = true, attempts = 0;
 	const clear = () => { clearTimer(timer); timer = undefined; };
 	const snap = () => {
 		if (!active || !enabled() || snapped) return;
 		const geometry = ink.slice(0, stableIndex + 1);
 		geometry.push(ink[ink.length - 1]);
 		const shape = recognizeShape(geometry, 18 / scale);
+		onState({ attempts: ++attempts, recognition: shape?.name || 'Unrecognized', holdMs: Math.round(now() - stableSince) });
 		if (!shape) return;
 		snapped = shape;
 		anchor = { ...ink[ink.length - 1] };
@@ -134,6 +135,7 @@ export function createShapeAssist({ start, scale = 1, pointerType = "mouse", ren
 			// iPad can postpone a timer during native input. Check the hold duration
 			// on release too, instead of silently discarding an otherwise valid hold.
 			if (keep && !snapped && stableSince !== null && now() - stableSince >= 650) snap();
+			onState({ holdMs: stableSince === null ? 0 : Math.round(now() - stableSince), samples: ink.length });
 			clear(); active = false;
 			if (!keep && snapped) render(ink);
 			return keep && snapped ? { shape: snapped, original: ink } : null;

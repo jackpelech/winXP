@@ -77,6 +77,8 @@ function fixture() {
     $status_position: { text() {} },
     $status_text: { text() {} },
     createShapeAssist,
+    shapeSnapSettings: { enabled: true },
+    pencilDiagnostics: { start() {}, move() {}, state() {}, finish() {} },
     main_canvas: {
       setPointerCapture(id) {
         captures.add(id);
@@ -146,6 +148,7 @@ function fixture() {
       preventDefault() {},
       ...changes,
     };
+    if (type === 'lostpointercapture') captures.delete(event.pointerId);
     if (type === 'pointerdown' || type === 'pointermove') canvas.emit(event);
     if (type === 'pointerdown') area.emit(event);
     global.emit(event);
@@ -198,8 +201,8 @@ test('pen takes over an existing touch contact and still draws on that first str
   assert.equal(f.strokes.length, 1);
   assert.deepEqual(f.strokes[0].at(-1), [30, 10]);
 });
-test('cancel and lost capture finish once and never leave the next stroke blank', () => {
-  for (const end of ['pointercancel', 'lostpointercapture']) {
+test('cancellation finishes once and never leaves the next stroke blank', () => {
+  for (const end of ['pointercancel']) {
     const f = fixture();
     for (let i = 1; i <= 20; i++) {
       f.emit('pointerdown', { pointerId: i });
@@ -313,4 +316,30 @@ test('Pencil input in a text field keeps focus and never becomes a drawing or pa
   assert.equal(blurs, 0);
   assert.equal(f.context.pointers.length, 0);
   assert.equal(f.strokes.length, 0);
+});
+
+test('Pencil capture loss does not end a held stroke or discard a snapped shape', async () => {
+  const f = fixture();
+  f.emit('pointerdown', { clientX: 20, clientY: 60 });
+  f.emit('pointermove', { clientX: 100, clientY: 62 });
+  f.emit('lostpointercapture');
+  assert.equal(f.strokes.length, 0);
+  assert.equal(f.context.pointers.length, 1);
+  f.emit('pointermove', { clientX: 160, clientY: 61 });
+  await new Promise(resolve => setTimeout(resolve, 720));
+  f.emit('pointerup', { clientX: 160, clientY: 61 });
+  assert.equal(f.strokes.length, 2);
+  assert.equal(f.strokes[1].length, 2);
+  assert.equal(f.context.pointers.length, 0);
+});
+test('Pencil lift-off coordinates cannot revert an already-snapped shape', async () => {
+  const f = fixture();
+  f.emit('pointerdown', { clientX: 20, clientY: 60 });
+  f.emit('pointermove', { clientX: 100, clientY: 62 });
+  f.emit('pointermove', { clientX: 160, clientY: 61 });
+  await new Promise(resolve => setTimeout(resolve, 720));
+  f.emit('pointerup', { clientX: 0, clientY: 0 });
+  assert.equal(f.strokes.length, 2);
+  assert.equal(f.strokes[1].length, 2);
+  assert.equal(f.strokes[1].some(p => p[0] === 0 && p[1] === 0), false);
 });
