@@ -22,8 +22,6 @@ import disk from 'assets/windowsIcons/334(48x48).png';
 import cd from 'assets/windowsIcons/111(48x48).png';
 import dropdown from 'assets/windowsIcons/dropdown.png';
 import pullup from 'assets/windowsIcons/pullup.png';
-import logo from 'assets/github-logo.png';
-import mine from 'assets/minesweeper/mine-icon.png';
 import windows from 'assets/windowsIcons/windows.png';
 
 function MyComputer({ onClose }) {
@@ -220,45 +218,14 @@ function MyComputer({ onClose }) {
               </div>
               <div className="com__content__left__card__content">
                 <div className="com__content__left__card__row">
-                  <iframe
-                    title="ghbtn"
-                    style={{ margin: '0 0 3px -1px', height: '30px' }}
-                    src="https://ghbtns.com/github-btn.html?user=ShizukuIchi&repo=winXP&type=star&count=true&size=large"
-                    frameBorder="0"
-                    scrolling="0"
-                    width="170px"
-                    height="20px"
-                  />
+                  <div className="com__content__left__card__text">
+                    My Computer
+                  </div>
                 </div>
                 <div className="com__content__left__card__row">
-                  <img
-                    className="com__content__left__card__img"
-                    src="https://cdn.iconscout.com/icon/free/png-256/medium-1425876-1205067.png"
-                    alt="control"
-                  />
-                  <a
-                    href="https://medium.com/@ShizukuIchi"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="com__content__left__card__text link"
-                  >
-                    Medium
-                  </a>
-                </div>
-                <div className="com__content__left__card__row">
-                  <img
-                    className="com__content__left__card__img"
-                    src={mine}
-                    alt="control"
-                  />
-                  <a
-                    href="https://github.com/ShizukuIchi/minesweeper"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="com__content__left__card__text link"
-                  >
-                    Minesweeper
-                  </a>
+                  <div className="com__content__left__card__text">
+                    System folder
+                  </div>
                 </div>
               </div>
             </div>
@@ -331,41 +298,6 @@ function MyComputer({ onClose }) {
                     CD Drive (D:)
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="com__content__right__card com__content__right__card--me">
-              <div className="com__content__right__card__header">
-                About Me :)
-              </div>
-              <div className="com__content__right__card__content">
-                <a
-                  href="https://github.com/ShizukuIchi"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="com__content__right__card__item--me"
-                >
-                  <img
-                    className="com__content__right__card__img"
-                    src={logo}
-                    alt="control"
-                  />
-                  <div className="com__content__right__card__text">Github</div>
-                </a>
-                <a
-                  href="https://sh1zuku.csie.io"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="com__content__right__card__item--me"
-                >
-                  <img
-                    className="com__content__right__card__img"
-                    src="https://a.ppy.sh/2926513_1448497605.png"
-                    alt="control"
-                  />
-                  <div className="com__content__right__card__text">
-                    My Website
-                  </div>
-                </a>
               </div>
             </div>
           </div>

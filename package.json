@@ -2,8 +2,6 @@
   "name": "winXP",
   "version": "0.1.0",
   "private": true,
-  "author": "ShizukuIchi <shizukuichi@gmail.com>",
-  "homepage": "https://winxp.now.sh",
   "dependencies": {
     "lodash.samplesize": "^4.2.0",
     "react": "^16.8.6",
@@ -42,5 +40,6 @@
   },
   "engines": {
     "node": ">=10.16.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22"
 }

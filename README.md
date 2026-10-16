@@ -1,28 +1,23 @@
-# WinXP
+# Windows XP desktop
 
-🏁 Web based Windows XP desktop recreation.
+A direct fork of [ShizukuIchi/winXP](https://github.com/ShizukuIchi/winXP), based on commit `856bb554b3667f62078010b4cee10cc2645761e1`.
 
-Features:
+The original Windows XP interface, images, Minesweeper, Webamp music player, Internet Explorer, My Computer, Notepad, and JS Paint are preserved. The original author’s profile links, website link, star widget, and promotional content have been removed from the interface.
 
-- Drag and resize, minimize, maximize windows
-- Open applications from desktop icons or start menu
-- Minesweeper, Internet Explorer, My Computer, Notepad, Winamp, Paint
-- Power off menu
+## Development
 
-## [Try it!](https://winxp.now.sh)
+Use Yarn Classic 1.22.22 with the included lockfile.
 
-Windows XP 👉 https://winxp.now.sh
+```sh
+yarn install --frozen-lockfile
+yarn start
+```
 
-[![](demo/demo.gif)](https://winxp.now.sh)
+`yarn build` produces `build/`.
 
-## Contributing
+## License and credits
 
-Generally open an issue (or comment on an issue if there's one already) before starting work on a PR.
+The upstream MIT license and copyright notice are retained in `LICENSE`.
+Windows XP names, artwork, and trademarks belong to Microsoft. This recreation is not affiliated with Microsoft.
 
-## License
-
-The Windows XP name, artwork, trademark are surely property of Microsoft. This project is provided for educational purposes only. It is not affiliated with and has not been approved by Microsoft.
-
-## Thanks
-- [Webamp](https://github.com/captbaritone/webamp), Winamp 2 reimplementation by: [captbaritone](https://github.com/captbaritone)
-- [JS Paint](https://github.com/1j01/jspaint), Paint reimplementation by: [1j01](https://github.com/1j01)
+The music player is [Webamp](https://github.com/captbaritone/webamp). Paint is [JS Paint](https://github.com/1j01/jspaint). Their original interfaces and capabilities are retained.
