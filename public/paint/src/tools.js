@@ -747,7 +747,7 @@ const tools = [{
 		"pencil", "lead", "graphite", "pen", "pixel", "pixel art", "penciling", "penning", "pixeling",
 	],
 	help_icon: "p_pencil.gif",
-	description: localize("Draws a free-form line one pixel wide."),
+	description: localize("Draws a free-form line. Hold at the end to snap a shape (Image menu)."),
 	cursor: ["pencil", [13, 23], "crosshair"],
 	stroke_only: true,
 	get_brush() {
@@ -765,7 +765,7 @@ const tools = [{
 		// "calligraphy", "nib", "slanted brush", "square brush", "circle brush", "circular brush",
 	],
 	help_icon: "p_brush.gif",
-	description: localize("Draws using a brush with the selected shape and size."),
+	description: localize("Draws using a brush. Hold at the end to snap a shape (Image menu)."),
 	cursor: ["precise-dotted", [16, 16], "crosshair"],
 	dynamic_preview_cursor: true,
 	get_brush() {
@@ -805,7 +805,7 @@ const tools = [{
 		"text", "type", "typography", "write", "writing", "words", "text box", "text-box", "textbox", "word", "lettering", "font", "fonts", "texts",
 	],
 	help_icon: "p_txt.gif",
-	description: localize("Inserts text into the picture."),
+	description: localize("Drag a text box, then type or use Apple Pencil with Scribble enabled on iPad."),
 	cursor: ["precise", [16, 16], "crosshair"],
 	preload() {
 		setTimeout(FontDetective.preload, 10);
@@ -1492,11 +1492,14 @@ tools.forEach((tool) => {
 		tool.pointerdown = (_ctx, _x, _y) => {
 			tool.init_mask_canvas();
 		};
-		tool.pointerup = () => {
+		tool.pointerup = () => tool.commit_stroke();
+		tool.commit_stroke = (name = tool.name, base_image) => {
 			undoable({
-				name: tool.name,
+				name,
 				icon: get_icon_for_tool(tool),
 			}, () => {
+				// Replacing a stroke must restore its background, including transparent pixels.
+				if (base_image) main_ctx.putImageData(base_image, 0, 0);
 				tool.render_from_mask(main_ctx);
 
 				tool.mask_canvas.width = 1;
@@ -1504,18 +1507,24 @@ tools.forEach((tool) => {
 			});
 		};
 
-		tool.paint = () => {
+		const paint_segment = (previous, point) => {
 			const brush = tool.get_brush();
 			const circumference_points = get_circumference_points_for_brush(brush.shape, brush.size);
 			tool.mask_canvas.ctx.fillStyle = stroke_color;
 			const iterate_line = brush.size > 1 ? bresenham_dense_line : bresenham_line;
-			iterate_line(pointer_previous.x, pointer_previous.y, pointer.x, pointer.y, (x, y) => {
+			iterate_line(previous.x, previous.y, point.x, point.y, (x, y) => {
 				for (const point of circumference_points) {
 					tool.mask_canvas.ctx.fillRect(x + point.x, y + point.y, 1, 1);
 				}
 			});
-			stamp_brush_canvas(tool.mask_canvas.ctx, pointer_previous.x, pointer_previous.y, brush.shape, brush.size);
-			stamp_brush_canvas(tool.mask_canvas.ctx, pointer.x, pointer.y, brush.shape, brush.size);
+			stamp_brush_canvas(tool.mask_canvas.ctx, previous.x, previous.y, brush.shape, brush.size);
+			stamp_brush_canvas(tool.mask_canvas.ctx, point.x, point.y, brush.shape, brush.size);
+		};
+		tool.paint = () => paint_segment(pointer_previous, pointer);
+		tool.replace_stroke_points = (points) => {
+			tool.init_mask_canvas();
+			tool.mask_canvas.ctx.clearRect(0, 0, tool.mask_canvas.width, tool.mask_canvas.height);
+			points.forEach((point, i) => paint_segment(points[Math.max(0, i - 1)], point));
 		};
 
 		tool.cancel = () => {

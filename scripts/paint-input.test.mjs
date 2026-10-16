@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
+const shapeSource = readFileSync(new URL('../public/paint/src/shape-assist.js', import.meta.url), 'utf8');
+const { createShapeAssist } = await import(`data:text/javascript;base64,${Buffer.from(shapeSource).toString('base64')}`);
+
 // Run the actual vendored canvas handlers, not a second drawing implementation.
 const source = readFileSync(
   process.env.PAINT_INPUT_SOURCE ||
@@ -64,12 +67,16 @@ function fixture() {
       if (pending) strokes.push(pending);
       pending = null;
     },
+    replace_stroke_points(points) { pending = points.map(p => [p.x, p.y]); },
+    commit_stroke() { this.pointerup(); },
   };
   const context = vm.createContext({
     $canvas: canvas,
     $canvas_area: area,
     $G: global,
     $status_position: { text() {} },
+    $status_text: { text() {} },
+    createShapeAssist,
     main_canvas: {
       setPointerCapture(id) {
         captures.add(id);
@@ -265,5 +272,32 @@ test('ordinary mouse strokes and two-finger touch gestures retain their original
   assert.equal(f.strokes.length, 1);
   f.emit('pointerup', { pointerType: 'touch', pointerId: 8 });
   f.emit('pointerup', { pointerType: 'touch', pointerId: 9 });
+  assert.equal(f.context.pointers.length, 0);
+});
+
+
+test('a held pen shape commits original and corrected ink, while palm release cannot finish it', async () => {
+  const f = fixture();
+  f.emit('pointerdown', { clientX: 20, clientY: 60 });
+  for (const [clientX, clientY] of [[50,62], [100,58], [160,61]]) f.emit('pointermove', { clientX, clientY });
+  f.emit('pointerdown', { pointerType: 'touch', pointerId: 9 });
+  f.emit('pointerup', { pointerType: 'touch', pointerId: 9 });
+  await new Promise(resolve => setTimeout(resolve, 720));
+  assert.equal(f.strokes.length, 0);
+  f.emit('pointerup', { clientX: 161, clientY: 62 });
+  assert.equal(f.strokes.length, 2);
+  assert.ok(f.strokes[0].length > 2);
+  assert.equal(f.strokes[1].length, 2);
+  assert.equal(f.strokes[1][0][1], f.strokes[1][1][1]);
+  assert.equal(f.context.pointers.length, 0);
+});
+test('canceling a pending hold cannot snap a later stroke', async () => {
+  const f = fixture();
+  f.emit('pointerdown'); f.emit('pointermove', { clientX: 100 });
+  f.emit('pointercancel');
+  f.emit('pointerdown', { pointerId: 2, clientX: 200 });
+  f.emit('pointerup', { pointerId: 2, clientX: 202 });
+  await new Promise(resolve => setTimeout(resolve, 720));
+  assert.equal(f.strokes.length, 2);
   assert.equal(f.context.pointers.length, 0);
 });

@@ -2,6 +2,7 @@
 /* global show_font_box:writable */
 /* global $canvas_area, $status_position, $status_size, magnification, main_canvas, selected_colors, text_tool_font, tool_transparent_mode */
 import { $FontBox } from "./$FontBox.js";
+import { prepareScribbleTextField } from "./scribble-text.js";
 import { Handles } from "./Handles.js";
 import { OnCanvasObject } from "./OnCanvasObject.js";
 import { update_helper_layer } from "./functions.js";
@@ -61,7 +62,10 @@ class OnCanvasTextBox extends OnCanvasObject {
 			});
 		};
 
+		let text_input;
 		const auto_size = () => {
+			// Scribble can insert text mid-gesture. Keep the writing target stationary.
+			if (text_input?.isWriting()) return;
 			// Auto-expand, and apply minimum size.
 			if (text_tool_font.vertical) {
 				const old_width = this.width;
@@ -92,7 +96,7 @@ class OnCanvasTextBox extends OnCanvasObject {
 
 		const update = () => {
 			requestAnimationFrame(() => {
-				edit_textarea.scrollTop = 0; // prevent scrolling edit textarea to keep in sync
+				if (!text_input?.isWriting()) edit_textarea.scrollTop = 0; // keep native ink stationary
 			});
 
 			const font = text_tool_font;
@@ -149,11 +153,14 @@ class OnCanvasTextBox extends OnCanvasObject {
 			img.src = data_url;
 		};
 
+		text_input = this.text_input = prepareScribbleTextField(edit_textarea, () => update());
+		// The serialized text canvas must not draw the editor's placeholder.
+		render_textarea.removeAttribute("placeholder");
 		$G.on("option-changed", this._on_option_changed = update);
 		this.$editor.on("input", this._on_input = update);
 		this.$editor.on("scroll", this._on_scroll = () => {
 			requestAnimationFrame(() => {
-				edit_textarea.scrollTop = 0; // prevent scrolling edit textarea to keep in sync
+				if (!text_input?.isWriting()) edit_textarea.scrollTop = 0; // keep native ink stationary
 			});
 		});
 
@@ -164,7 +171,7 @@ class OnCanvasTextBox extends OnCanvasObject {
 		this.position();
 
 		this.$el.append(this.$editor);
-		this.$editor[0].focus();
+		this.$editor[0].focus({ preventScroll: true });
 		this.handles = new Handles({
 			$handles_container: this.$el,
 			$object_container: $canvas_area,
@@ -303,6 +310,7 @@ class OnCanvasTextBox extends OnCanvasObject {
 		// Mobile browsers generally scroll the view for a textbox well enough, but
 		// don't include the custom behavior of moving the font box out of the way.
 		$(window).on("resize", this._on_window_resize = () => {
+			if (text_input.isWriting()) return;
 			this.$editor[0].scrollIntoView({ block: "nearest", inline: "nearest" });
 			displace_font_box();
 		});
@@ -312,6 +320,7 @@ class OnCanvasTextBox extends OnCanvasObject {
 		update_helper_layer(); // @TODO: under-grid specific helper layer?
 	}
 	destroy() {
+		this.text_input.destroy();
 		super.destroy();
 		// Don't want to call close() anymore since the "close" event is handled to toggle `show_font_box` now,
 		// and we don't want to toggle the preference when destroying the textbox.

@@ -14,6 +14,7 @@ import { showMessageBox } from "./msgbox.js";
 import { simulateRandomGesturesPeriodically, simulatingGestures, stopSimulatingGestures } from "./simulate-random-gestures.js";
 import { speech_recognition_active, speech_recognition_available } from "./speech-recognition.js";
 import { get_theme, set_theme } from "./theme.js";
+import { shapeSnapSettings } from "./shape-assist.js";
 
 const looksLikeChrome = !!(window.chrome && (window.chrome.loadTimes || window.chrome.csi));
 // NOTE: Microsoft Edge includes window.chrome.app
@@ -700,6 +701,15 @@ const menus = {
 				check: () => !tool_transparent_mode,
 			},
 			description: localize("Makes the current selection either opaque or transparent."),
+		},
+		MENU_DIVIDER,
+		{
+			label: "Draw and &Hold to Snap",
+			checkbox: {
+				toggle: () => shapeSnapSettings.toggle(),
+				check: () => shapeSnapSettings.enabled,
+			},
+			description: "With Pencil or Brush, hold still at the end of a line, circle, or rectangle to snap it. Undo restores the original stroke.",
 		},
 	],
 	[localize("&Colors")]: [

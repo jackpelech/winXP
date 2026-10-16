@@ -120,7 +120,8 @@ const Window = memo(function({
     resizeThreshold: 10,
   });
   let width, height, x, y;
-  const compact = bounds.width < 768 || bounds.height < 500;
+  // Include portrait iPads so Paint and its title-bar controls stay on screen.
+  const compact = bounds.width <= 1024 || bounds.height < 500;
   if (maximized) {
     width = bounds.width + 6;
     height = bounds.height + 6;

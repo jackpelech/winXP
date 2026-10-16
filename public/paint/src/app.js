@@ -18,6 +18,7 @@ import { showMessageBox } from "./msgbox.js";
 import { stopSimulatingGestures } from "./simulate-random-gestures.js";
 import { disable_speech_recognition, enable_speech_recognition, trace_and_sketch_stop } from "./speech-recognition.js";
 import { localStore } from "./storage.js";
+import { createShapeAssist } from "./shape-assist.js";
 import { get_theme, set_theme } from "./theme.js";
 import { TOOL_AIRBRUSH, TOOL_BRUSH, TOOL_CURVE, TOOL_ELLIPSE, TOOL_ERASER, TOOL_LINE, TOOL_PENCIL, TOOL_POLYGON, TOOL_RECTANGLE, TOOL_ROUNDED_RECTANGLE, TOOL_SELECT, tools } from "./tools.js";
 
@@ -1390,6 +1391,7 @@ function update_fill_and_stroke_colors_and_lineWidth(selected_tool) {
 // #region Primary Canvas Interaction
 // Portfolio input fixes: one owner per stroke, Pencil samples, and complete cancellation cleanup.
 let drawing_pointer_id = null;
+let shape_assist = null;
 function pointer_is_drawing_owner(event) {
  return event.pointerId === undefined || drawing_pointer_id === null || event.pointerId === drawing_pointer_id;
 }
@@ -1476,9 +1478,11 @@ function canvas_pointer_move_point(e) {
 			}
 		}
 	}
-	selected_tools.forEach((selected_tool) => {
-		tool_go(selected_tool);
-	});
+	if (!shape_assist?.move(pointer)) {
+		selected_tools.forEach((selected_tool) => {
+			tool_go(selected_tool);
+		});
+	}
 	pointer_previous = pointer;
 }
 $canvas.on("pointermove", (e) => {
@@ -1704,6 +1708,15 @@ $canvas.on("pointerdown", (e) => {
 			}
 		});
 
+		const stroke_base = current_history_node.image_data;
+		if (selected_tools.length === 1 && [TOOL_PENCIL, TOOL_BRUSH].includes(selected_tool.id) && selected_tool.replace_stroke_points) {
+			const tool = selected_tool;
+			shape_assist = createShapeAssist({
+				start: pointer_start, scale: magnification,
+				render(points) { tool.replace_stroke_points(points); update_helper_layer(); },
+				status(message) { $status_text.text(message); },
+			});
+		}
 		$G.on("pointermove", canvas_pointer_move);
 
   const stroke_pointer_id = drawing_pointer_id;
@@ -1716,6 +1729,8 @@ $canvas.on("pointerdown", (e) => {
      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, button: -1, buttons: pointer_buttons,
      pointerId: stroke_pointer_id, pointerType: pointer_type });
    }
+   const snapped = shape_assist?.finish(!canceling && !no_undoable && e.type === "pointerup");
+   shape_assist = null;
    drawing_pointer_id = null;
    pointer_active = false;
    if (main_canvas.hasPointerCapture?.(stroke_pointer_id)) main_canvas.releasePointerCapture(stroke_pointer_id);
@@ -1734,7 +1749,14 @@ $canvas.on("pointerdown", (e) => {
 			// @TODO: do any tools use pointerup for cleanup?
 			if (!no_undoable) {
 				selected_tools.forEach((selected_tool) => {
-					selected_tool.pointerup?.(main_ctx, pointer.x, pointer.y);
+					if (snapped && selected_tools.length === 1) {
+						selected_tool.replace_stroke_points(snapped.original);
+						selected_tool.pointerup(main_ctx, pointer.x, pointer.y);
+						selected_tool.replace_stroke_points(snapped.shape.points);
+						selected_tool.commit_stroke(`Snap to ${snapped.shape.name}`, stroke_base);
+					} else {
+						selected_tool.pointerup?.(main_ctx, pointer.x, pointer.y);
+					}
 				});
 			}
 
