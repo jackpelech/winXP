@@ -26,6 +26,12 @@ import pullup from 'assets/windowsIcons/pullup.png';
 import windows from 'assets/windowsIcons/windows.png';
 import textDocument from 'assets/windowsIcons/327(32x32).png';
 
+const itemTypes = {
+  folder: 'File folder',
+  text: 'Text Document',
+  application: 'Application',
+};
+
 function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
   const [selectedItem, setSelectedItem] = useState('');
   const [history, setHistory] = useState({
@@ -97,6 +103,10 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
   }
   function goUp() {
     if (sharedFolder) openLocation(parentLocation);
+  }
+  function openItem(item) {
+    if (item.type === 'folder') openLocation(item.location);
+    else if (item.type === 'text') onOpenFile(item);
   }
   function navigationProps(label, enabled, onNavigate) {
     return {
@@ -413,8 +423,8 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
                 </div>
                 <div className="com__content__left__card__row">
                   <div className="com__content__left__card__text">
-                    {selectedFile && selectedFile.type === 'text'
-                      ? 'Text Document'
+                    {selectedFile
+                      ? itemTypes[selectedFile.type]
                       : sharedFolder
                       ? 'File folder'
                       : 'System folder'}
@@ -430,14 +440,13 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
                   <div
                     key={item.name}
                     className="com__content__right__card__item com__file-item"
-                    {...actionProps(item.name, true, () =>
-                      item.type === 'folder'
-                        ? openLocation(item.location)
-                        : onOpenFile(item),
-                    )}
+                    {...actionProps(item.name, true, () => openItem(item))}
                   >
                     <img
-                      src={item.type === 'folder' ? folder : textDocument}
+                      src={
+                        item.icon ||
+                        (item.type === 'folder' ? folder : textDocument)
+                      }
                       alt=""
                       className={`com__content__right__card__img${
                         item.type === 'text' ? ' com__text-icon' : ''
@@ -448,9 +457,7 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
                         {item.name}
                       </div>
                       <div className="com__file-type">
-                        {item.type === 'folder'
-                          ? 'File folder'
-                          : 'Text Document'}
+                        {itemTypes[item.type]}
                       </div>
                       {item.type === 'text' && (
                         <div className="com__file-type">
@@ -552,7 +559,8 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
       </div>
       {sharedFolder && (
         <footer className="com__status-bar">
-          {currentFolder.items.length} objects
+          {currentFolder.items.length}{' '}
+          {currentFolder.items.length === 1 ? 'object' : 'objects'}
         </footer>
       )}
     </Div>

@@ -246,6 +246,7 @@ function WinXP() {
     const appSetting = Object.values(appSettings).find(
       setting => setting.component === component,
     );
+    if (!appSetting) return;
     dispatch({ type: ADD_APP, payload: appSetting });
   }
   function getFocusedAppId() {

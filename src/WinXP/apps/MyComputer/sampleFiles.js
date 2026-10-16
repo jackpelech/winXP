@@ -1,8 +1,15 @@
+import { hopscotchProject } from '../../projects';
+
 const sampleFolders = {
   'Shared Documents': {
     name: 'Shared Documents',
     parent: 'My Computer',
     items: [
+      {
+        name: 'Projects',
+        type: 'folder',
+        location: 'Shared Documents/Projects',
+      },
       {
         name: 'Sample Folder',
         type: 'folder',
@@ -27,6 +34,11 @@ const sampleFolders = {
           'Things to do\n============\n\n[ ] Explore the desktop\n[ ] Open a folder\n[ ] Read a text file\n[ ] Play a round of Minesweeper\n\nThis is a sample checklist.\n',
       },
     ],
+  },
+  'Shared Documents/Projects': {
+    name: 'Projects',
+    parent: 'Shared Documents',
+    items: [hopscotchProject],
   },
   'Shared Documents/Sample Folder': {
     name: 'Sample Folder',

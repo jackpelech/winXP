@@ -4,6 +4,7 @@ import ErrorBox from './ErrorBox';
 import MyComputer from './MyComputer';
 import Notepad from './Notepad';
 import Paint from './Paint';
+import { hopscotchProject } from '../projects';
 import iePaper from 'assets/windowsIcons/ie-paper.png';
 import ie from 'assets/windowsIcons/ie.png';
 import mine from 'assets/minesweeper/mine-icon.png';
@@ -125,6 +126,13 @@ export const defaultIconState = [
     icon: paintLarge,
     title: 'Paint',
     component: Paint,
+    isFocus: false,
+  },
+  {
+    id: 5,
+    icon: hopscotchProject.icon,
+    title: hopscotchProject.name,
+    component: null,
     isFocus: false,
   },
 ];
