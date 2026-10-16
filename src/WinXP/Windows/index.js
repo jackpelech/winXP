@@ -1,11 +1,11 @@
-import React, { useRef, memo } from 'react';
-import useWindowSize from 'react-use/lib/useWindowSize';
+import React, { useRef, useLayoutEffect, useState, memo } from 'react';
 import styled from 'styled-components';
 
 import { useElementResize } from 'hooks';
 import HeaderButtons from './HeaderButtons';
 
 function Windows({
+  bounds,
   apps,
   onMouseDown,
   onClose,
@@ -17,9 +17,17 @@ function Windows({
   onChangeHeader,
 }) {
   return (
-    <div style={{ position: 'relative', zIndex: 0 }}>
+    <div
+      style={{
+        position: 'relative',
+        zIndex: 0,
+        height: '100%',
+        pointerEvents: 'none',
+      }}
+    >
       {apps.map(app => (
         <StyledWindow
+          bounds={bounds}
           show={!app.minimized}
           key={app.id}
           id={app.id}
@@ -39,6 +47,7 @@ function Windows({
 }
 
 const Window = memo(function({
+  bounds,
   injectProps,
   id,
   onMouseDown,
@@ -76,24 +85,41 @@ const Window = memo(function({
   }
   const dragRef = useRef(null);
   const ref = useRef(null);
-  const { width: windowWidth, height: windowHeight } = useWindowSize();
+  const [measuredSize, setMeasuredSize] = useState({ width: 0, height: 0 });
+  useLayoutEffect(() => {
+    function measure() {
+      const { offsetWidth: width, offsetHeight: height } = ref.current;
+      setMeasuredSize(previous =>
+        previous.width === width && previous.height === height
+          ? previous
+          : { width, height },
+      );
+    }
+    measure();
+    const observer = window.ResizeObserver ? new ResizeObserver(measure) : null;
+    if (observer) observer.observe(ref.current);
+    return () => {
+      if (observer) observer.disconnect();
+    };
+  }, []);
   const { offset, size } = useElementResize(ref, {
     dragRef,
     defaultOffset,
     defaultSize,
     boundary: {
-      top: 1,
-      right: windowWidth - 1,
-      bottom: windowHeight - 31,
-      left: 1,
+      top: bounds.top + 1,
+      right: bounds.left + bounds.width - 1,
+      bottom: bounds.top + bounds.height - 1,
+      left: bounds.left + 1,
     },
     resizable,
     resizeThreshold: 10,
   });
   let width, height, x, y;
+  const compact = bounds.width < 768 || bounds.height < 500;
   if (maximized) {
-    width = windowWidth + 6;
-    height = windowHeight - 24;
+    width = bounds.width + 6;
+    height = bounds.height + 6;
     x = -3;
     y = -3;
   } else {
@@ -101,6 +127,20 @@ const Window = memo(function({
     height = size.height;
     x = offset.x;
     y = offset.y;
+    if (compact) {
+      const maxWidth = Math.max(1, bounds.width - 12);
+      const maxHeight = Math.max(1, bounds.height - 12);
+      if (width) width = Math.min(width, maxWidth);
+      if (height) height = Math.min(height, maxHeight);
+      x = Math.max(
+        6,
+        Math.min(x, bounds.width - (width || measuredSize.width) - 6),
+      );
+      y = Math.max(
+        6,
+        Math.min(y, bounds.height - (height || measuredSize.height) - 6),
+      );
+    }
   }
   return (
     <div
@@ -111,6 +151,14 @@ const Window = memo(function({
         transform: `translate(${x}px,${y}px)`,
         width: width ? `${width}px` : 'auto',
         height: height ? `${height}px` : 'auto',
+        maxWidth:
+          compact && !maximized
+            ? `${Math.max(1, bounds.width - 12)}px`
+            : undefined,
+        maxHeight:
+          compact && !maximized
+            ? `${Math.max(1, bounds.height - 12)}px`
+            : undefined,
         zIndex,
       }}
     >
@@ -154,6 +202,7 @@ const Window = memo(function({
 });
 
 const StyledWindow = styled(Window)`
+  pointer-events: auto;
   display: ${({ show }) => (show ? 'flex' : 'none')};
   position: absolute;
   padding: 3px;
@@ -233,6 +282,8 @@ const StyledWindow = styled(Window)`
     position: relative;
     margin-top: 25px;
     height: calc(100% - 25px);
+    min-height: 0;
+    overscroll-behavior: contain;
   }
 `;
 

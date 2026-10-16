@@ -104,7 +104,7 @@ function Footer({
         >
           <img className="footer__icon" src={computer} alt="" />
         </button>
-        <div style={{ position: 'relative', width: 0, height: 0 }}>
+        <div className="footer__balloon">
           {welcomeOpen && <Balloon onClose={() => setWelcomeOpen(false)} />}
         </div>
         <div className="footer__time">{time}</div>
@@ -129,8 +129,12 @@ function FooterWindow({ id, icon, title, onMouseDown, isFocus }) {
 }
 
 const Container = styled.footer`
-  height: 30px;
-  background: linear-gradient(
+  height: var(--desktop-taskbar-height);
+  padding-bottom: var(--desktop-safe-bottom);
+  padding-left: var(--desktop-safe-left);
+  padding-right: var(--desktop-safe-right);
+  background-color: #245edc;
+  background-image: linear-gradient(
     to bottom,
     #1f2f86 0,
     #3165c4 3%,
@@ -149,11 +153,23 @@ const Container = styled.footer`
     #1d4ec0 95%,
     #1941a5 98%
   );
+  background-size: 100% 30px;
+  background-repeat: no-repeat;
   position: absolute;
   bottom: 0;
   right: 0;
   left: 0;
   display: flex;
+  .footer__balloon {
+    position: relative;
+    width: 0;
+    height: 0;
+  }
+  @media (max-width: 767px), (max-height: 500px) {
+    .footer__balloon {
+      position: static;
+    }
+  }
   .footer__welcome {
     display: flex;
     align-items: center;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 
 import { WindowDropDowns } from 'components';
@@ -33,6 +33,7 @@ const itemTypes = {
 };
 
 function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
+  const inputType = useRef('mouse');
   const [selectedItem, setSelectedItem] = useState('');
   const [history, setHistory] = useState({
     locations: ['My Computer'],
@@ -144,7 +145,15 @@ function MyComputer({ onClose, onOpenLocation, onOpenFile, onChangeHeader }) {
       tabIndex: 0,
       'aria-label': label,
       'data-selected': doubleClick && selectedItem === label,
-      onClick: doubleClick ? () => setSelectedItem(label) : open,
+      onPointerDown: event => {
+        inputType.current = event.pointerType;
+      },
+      onClick: doubleClick
+        ? () => {
+            if (inputType.current === 'touch') open();
+            else setSelectedItem(label);
+          }
+        : open,
       onDoubleClick: doubleClick ? open : undefined,
       onKeyDown: e => {
         if (doubleClick && e.key === ' ') {

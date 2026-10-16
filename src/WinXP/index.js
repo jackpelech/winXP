@@ -2,6 +2,7 @@ import React, { useReducer, useRef, useCallback } from 'react';
 import styled, { keyframes } from 'styled-components';
 import wallpaper from 'assets/wallpaper.jpg';
 import useMouse from 'react-use/lib/useMouse';
+import useDesktopViewport from 'hooks/useDesktopViewport';
 
 import {
   ADD_APP,
@@ -187,7 +188,14 @@ const reducer = (state, action = { type: '' }) => {
 function WinXP() {
   const [state, dispatch] = useReducer(reducer, initState);
   const ref = useRef(null);
-  const mouse = useMouse(ref);
+  const workAreaRef = useRef(null);
+  const desktopBounds = useDesktopViewport(ref, workAreaRef);
+  const mousePosition = useMouse(workAreaRef);
+  const mouse = {
+    ...mousePosition,
+    docX: mousePosition.elX,
+    docY: mousePosition.elY,
+  };
   const focusedAppId = getFocusedAppId();
   const onFocusApp = useCallback(id => {
     dispatch({ type: FOCUS_APP, payload: id });
@@ -312,7 +320,7 @@ function WinXP() {
     });
   }
   function onMouseDownDesktop(e) {
-    if (e.target === e.currentTarget)
+    if (e.target === e.currentTarget || e.target === workAreaRef.current)
       dispatch({
         type: START_SELECT,
         payload: { x: mouse.docX, y: mouse.docY },
@@ -344,28 +352,31 @@ function WinXP() {
       onMouseDown={onMouseDownDesktop}
       state={state.powerState}
     >
-      <Icons
-        icons={state.icons}
-        onMouseDown={onMouseDownIcon}
-        onDoubleClick={onDoubleClickIcon}
-        displayFocus={state.focusing === FOCUSING.ICON}
-        appSettings={appSettings}
-        mouse={mouse}
-        selecting={state.selecting}
-        setSelectedIcons={onIconsSelected}
-      />
-      <DashedBox startPos={state.selecting} mouse={mouse} />
-      <Windows
-        apps={state.apps}
-        onMouseDown={onFocusApp}
-        onClose={onCloseApp}
-        onMinimize={onMinimizeWindow}
-        onMaximize={onMaximizeWindow}
-        focusedAppId={focusedAppId}
-        onOpenLocation={onOpenLocation}
-        onOpenFile={onOpenFile}
-        onChangeHeader={onChangeAppHeader}
-      />
+      <div className="desktop__work-area" ref={workAreaRef}>
+        <Icons
+          icons={state.icons}
+          onMouseDown={onMouseDownIcon}
+          onDoubleClick={onDoubleClickIcon}
+          displayFocus={state.focusing === FOCUSING.ICON}
+          appSettings={appSettings}
+          mouse={mouse}
+          selecting={state.selecting}
+          setSelectedIcons={onIconsSelected}
+        />
+        <DashedBox startPos={state.selecting} mouse={mouse} />
+        <Windows
+          bounds={desktopBounds}
+          apps={state.apps}
+          onMouseDown={onFocusApp}
+          onClose={onCloseApp}
+          onMinimize={onMinimizeWindow}
+          onMaximize={onMaximizeWindow}
+          focusedAppId={focusedAppId}
+          onOpenLocation={onOpenLocation}
+          onOpenFile={onOpenFile}
+          onChangeHeader={onChangeAppHeader}
+        />
+      </div>
       <Footer
         apps={state.apps}
         onMouseDownApp={onMouseDownFooterApp}
@@ -407,8 +418,16 @@ const Container = styled.div`
   height: 100%;
   overflow: hidden;
   position: relative;
-  background: url(${wallpaper}) no-repeat center center fixed;
+  background: url(${wallpaper}) no-repeat center center;
   background-size: cover;
+  overscroll-behavior: none;
+  .desktop__work-area {
+    position: absolute;
+    top: var(--desktop-safe-top);
+    right: var(--desktop-safe-right);
+    bottom: var(--desktop-taskbar-height);
+    left: var(--desktop-safe-left);
+  }
   animation: ${({ state }) => animation[state]} 5s forwards;
   *:not(input):not(textarea) {
     user-select: none;

@@ -279,5 +279,31 @@ const Div = styled.div`
     color: #154e12;
     margin: 8px 0 0;
   }
+  @media (max-width: 767px), (max-height: 500px) {
+    position: static;
+    filter: none;
+    .balloon__container {
+      left: calc(12px + var(--desktop-safe-left));
+      right: calc(12px + var(--desktop-safe-right));
+      bottom: calc(100% + 12px);
+      width: auto;
+      max-width: none;
+      max-height: calc(
+        var(--desktop-viewport-height, 100vh) - var(--desktop-taskbar-height) -
+          var(--desktop-safe-top) - 24px
+      );
+      overflow: auto;
+      overscroll-behavior: contain;
+      box-shadow: 2px 2px 1px rgba(0, 0, 0, 0.4);
+    }
+    .balloon__form input {
+      font-size: 16px;
+      height: 30px;
+    }
+    .balloon__container:before,
+    .balloon__container:after {
+      display: none;
+    }
+  }
 `;
 export default Balloon;

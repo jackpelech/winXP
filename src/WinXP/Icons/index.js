@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 
 function Icons({
@@ -11,10 +11,14 @@ function Icons({
   setSelectedIcons,
 }) {
   const [iconsRect, setIconsRect] = useState([]);
-  function measure(rect) {
-    if (iconsRect.find(r => r.id === rect.id)) return;
-    setIconsRect(iconsRect => [...iconsRect, rect]);
-  }
+  const measure = useCallback(rect => {
+    setIconsRect(current => {
+      const old = current.find(item => item.id === rect.id);
+      if (old && Object.keys(rect).every(key => old[key] === rect[key]))
+        return current;
+      return [...current.filter(item => item.id !== rect.id), rect];
+    });
+  }, []);
   useEffect(() => {
     if (!selecting) return;
     const sx = Math.min(selecting.x, mouse.docX);
@@ -57,6 +61,7 @@ function Icon({
   measure,
 }) {
   const ref = useRef(null);
+  const inputType = useRef('mouse');
   function _onMouseDown() {
     onMouseDown(id);
   }
@@ -66,14 +71,45 @@ function Icon({
   useEffect(() => {
     const target = ref.current;
     if (!target) return;
-    const { left, top, width, height } = ref.current.getBoundingClientRect();
-    const posX = left + window.scrollX;
-    const posY = top + window.scrollY;
-    measure({ id, x: posX, y: posY, w: width, h: height });
+    const workArea = target.closest('.desktop__work-area');
+    function update() {
+      const { left, top, width, height } = target.getBoundingClientRect();
+      const origin = workArea.getBoundingClientRect();
+      measure({
+        id,
+        x: left - origin.left,
+        y: top - origin.top,
+        w: width,
+        h: height,
+      });
+    }
+    update();
+    const observer = window.ResizeObserver ? new ResizeObserver(update) : null;
+    if (observer) observer.observe(workArea);
+    window.addEventListener('resize', update);
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
   }, [id, measure]);
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${title}`}
       className={className}
+      onPointerDown={event => {
+        inputType.current = event.pointerType;
+      }}
+      onClick={() => {
+        if (inputType.current === 'touch') _onDoubleClick();
+      }}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          _onDoubleClick();
+        }
+      }}
       onMouseDown={_onMouseDown}
       onDoubleClick={_onDoubleClick}
       ref={ref}
@@ -97,6 +133,18 @@ const IconsContainer = styled.div`
   position: absolute;
   margin-top: 40px;
   margin-left: 40px;
+  @media (max-width: 767px), (max-height: 500px) {
+    top: 16px;
+    bottom: 16px;
+    left: 16px;
+    margin: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(auto-fill, 68px);
+    grid-auto-columns: 70px;
+    gap: 8px 12px;
+    align-items: start;
+  }
 `;
 
 const StyledIcon = styled(Icon)`
@@ -105,6 +153,15 @@ const StyledIcon = styled(Icon)`
   display: flex;
   flex-direction: column;
   align-items: center;
+  touch-action: manipulation;
+  &:focus-visible {
+    outline: 1px dotted white;
+    outline-offset: 2px;
+  }
+  @media (max-width: 767px), (max-height: 500px) {
+    margin-bottom: 0;
+    min-height: 58px;
+  }
   &__text__container {
     width: 100%;
     font-size: 10px;
