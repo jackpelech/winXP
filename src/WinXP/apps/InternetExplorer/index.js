@@ -137,7 +137,7 @@ function InternetExplorer({ onClose }) {
         <div className="ie__address_bar__content">
           <img src={ie} alt="ie" className="ie__address_bar__content__img" />
           <div className="ie__address_bar__content__text">
-            {`https://www.google.com.tw${
+            {`https://www.google.com${
               state.route === 'search'
                 ? `/search?q=${encodeURIComponent(state.query)}`
                 : ''
@@ -223,6 +223,7 @@ const Div = styled.div`
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   .ie__function_bar {
+    flex-shrink: 0;
     height: 36px;
     display: flex;
     align-items: center;
@@ -313,6 +314,7 @@ const Div = styled.div`
     }
   }
   .ie__address_bar {
+    flex-shrink: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.7);
     height: 22px;
     font-size: 11px;
@@ -392,6 +394,7 @@ const Div = styled.div`
   }
   .ie__content {
     flex: 1;
+    min-height: 0;
     overflow: auto;
     padding-left: 1px;
     border-left: 1px solid #6f6f6f;
@@ -400,12 +403,11 @@ const Div = styled.div`
   }
   .ie__content__inner {
     position: relative;
-    min-height: 800px;
-    min-width: 800px;
     width: 100%;
     height: 100%;
   }
   .ie__footer {
+    flex-shrink: 0;
     height: 20px;
     border-top: 1px solid transparent;
     box-shadow: inset 0 1px 3px rgba(50, 50, 50, 0.8);

@@ -30,6 +30,7 @@ function Main({ onSearch, className }) {
             id="search"
             type="text"
             name="search"
+            aria-label="Search Google"
             onChange={onChange}
             value={value}
             onKeyDown={onKeyDown}
@@ -68,11 +69,13 @@ function Main({ onSearch, className }) {
 
 export default styled(Main)`
   height: 100%;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
   background: white;
   position: relative;
   header {
-    position: absolute;
-    top: 0;
+    flex-shrink: 0;
     width: 100%;
     height: 60px;
     padding: 0 15px;
@@ -93,18 +96,22 @@ export default styled(Main)`
     }
   }
   .content {
+    flex: 1;
+    padding: 16px 24px 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     .logo {
       height: 92px;
       width: 272px;
-      margin-top: 198px;
+      flex-shrink: 0;
     }
     .search-bar {
-      margin-left: 11px;
       margin-top: 26px;
       width: 586px;
+      max-width: 100%;
+      flex-shrink: 0;
       height: 46px;
       border: 1px solid rgba(0, 0, 0, 0.1);
       box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.2);
@@ -120,6 +127,7 @@ export default styled(Main)`
         color: rgba(0, 0, 0, 0.87);
         height: 100%;
         flex: 1;
+        min-width: 0;
         height: 34px;
         margin-top: 5px;
         font-size: 16px;
@@ -168,8 +176,7 @@ export default styled(Main)`
     }
   }
   footer {
-    position: absolute;
-    bottom: 0;
+    flex-shrink: 0;
     width: 100%;
     height: 42px;
     border-top: 1px solid rgba(0, 0, 0, 0.07);
@@ -230,10 +237,22 @@ export default styled(Main)`
       .right .item {
         padding-right: 14px;
       }
+    }
+  }
+  @media (max-width: 480px) {
+    footer {
+      height: auto;
       .lower {
-        .item {
-          display: none;
-        }
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .items {
+        position: static;
+        flex: 1 0 100%;
+        height: 32px;
+      }
+      .item {
+        padding: 0 12px;
       }
     }
   }

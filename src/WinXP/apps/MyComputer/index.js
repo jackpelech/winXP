@@ -24,16 +24,94 @@ import dropdown from 'assets/windowsIcons/dropdown.png';
 import pullup from 'assets/windowsIcons/pullup.png';
 import windows from 'assets/windowsIcons/windows.png';
 
-function MyComputer({ onClose, onOpenLocation, sharedFolder = false }) {
+function MyComputer({ onClose, onOpenLocation, onChangeHeader }) {
   const [selectedItem, setSelectedItem] = useState('');
-  const title = sharedFolder ? 'Shared Documents' : 'My Computer';
-  const sharedPath = 'C:\\Documents and Settings\\All Users\\Documents';
-  const goBack = () => {
-    onOpenLocation('My Computer');
-    if (sharedFolder) onClose();
+  const [history, setHistory] = useState({
+    locations: ['My Computer'],
+    index: 0,
+  });
+  const title = history.locations[history.index];
+  const sharedFolder = title === 'Shared Documents';
+  const canGoBack = history.index > 0;
+  const canGoForward = history.index < history.locations.length - 1;
+  const menuItems = {
+    ...dropDownData,
+    View: dropDownData.View.map(item =>
+      item.text === 'Go to'
+        ? {
+            ...item,
+            items: item.items.map(item => {
+              if (item.text === 'Back') return { ...item, disable: !canGoBack };
+              if (item.text === 'Forward')
+                return { ...item, disable: !canGoForward };
+              if (item.text === 'Up One Level')
+                return { ...item, disable: !sharedFolder };
+              if (item.text === 'My Computer')
+                return { ...item, symbol: sharedFolder ? undefined : 'check' };
+              return item;
+            }),
+          }
+        : item,
+    ),
   };
+  function updateLocation(nextHistory) {
+    const location = nextHistory.locations[nextHistory.index];
+    setHistory(nextHistory);
+    setSelectedItem('');
+    onChangeHeader({
+      title: location,
+      icon: location === 'Shared Documents' ? folderSmall : computer,
+    });
+  }
+  function openLocation(location) {
+    if (location !== 'My Computer' && location !== 'Shared Documents') {
+      onOpenLocation(location);
+      return;
+    }
+    if (location === title) return;
+    const locations = history.locations.slice(0, history.index + 1);
+    locations.push(location);
+    updateLocation({ locations, index: locations.length - 1 });
+  }
+  function goBack() {
+    if (canGoBack) updateLocation({ ...history, index: history.index - 1 });
+  }
+  function goForward() {
+    if (canGoForward) updateLocation({ ...history, index: history.index + 1 });
+  }
+  function goUp() {
+    if (sharedFolder) openLocation('My Computer');
+  }
+  function navigationProps(label, enabled, onNavigate) {
+    return {
+      role: 'button',
+      'aria-label': label,
+      'aria-disabled': !enabled,
+      tabIndex: enabled ? 0 : -1,
+      className: `com__function_bar__button${enabled ? '' : '--disable'}`,
+      onClick: enabled ? onNavigate : undefined,
+      onKeyDown: e => {
+        if (enabled && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onNavigate();
+        }
+      },
+    };
+  }
+  function onNavigationKeyDown(e) {
+    if (e.altKey && e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goBack();
+    } else if (e.altKey && e.key === 'ArrowRight') {
+      e.preventDefault();
+      goForward();
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      goUp();
+    }
+  }
   function actionProps(label, doubleClick = false) {
-    const open = () => onOpenLocation(label);
+    const open = () => openLocation(label);
     return {
       role: 'button',
       tabIndex: 0,
@@ -42,6 +120,11 @@ function MyComputer({ onClose, onOpenLocation, sharedFolder = false }) {
       onClick: doubleClick ? () => setSelectedItem(label) : open,
       onDoubleClick: doubleClick ? open : undefined,
       onKeyDown: e => {
+        if (doubleClick && e.key === ' ') {
+          e.preventDefault();
+          setSelectedItem(label);
+          return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           open();
@@ -54,59 +137,44 @@ function MyComputer({ onClose, onOpenLocation, sharedFolder = false }) {
       case 'Close':
         onClose();
         break;
+      case 'Back':
+        goBack();
+        break;
+      case 'Forward':
+        goForward();
+        break;
+      case 'Up One Level':
+        goUp();
+        break;
+      case 'My Computer':
+        openLocation('My Computer');
+        break;
+      case 'Refresh':
+        setSelectedItem('');
+        break;
       default:
         onOpenLocation(item);
     }
   }
   return (
-    <Div>
+    <Div onKeyDown={onNavigationKeyDown}>
       <section className="com__toolbar">
         <div className="com__options">
-          <WindowDropDowns
-            items={dropDownData}
-            onClickItem={onClickOptionItem}
-          />
+          <WindowDropDowns items={menuItems} onClickItem={onClickOptionItem} />
         </div>
         <img className="com__windows-logo" src={windows} alt="windows" />
       </section>
       <section className="com__function_bar">
-        <div
-          className={
-            sharedFolder
-              ? 'com__function_bar__button'
-              : 'com__function_bar__button--disable'
-          }
-          role="button"
-          aria-label="Back"
-          aria-disabled={!sharedFolder}
-          tabIndex={sharedFolder ? 0 : -1}
-          onClick={sharedFolder ? goBack : undefined}
-          onKeyDown={e => {
-            if (sharedFolder && e.key === 'Enter') goBack();
-          }}
-        >
+        <div {...navigationProps('Back', canGoBack, goBack)}>
           <img className="com__function_bar__icon" src={back} alt="" />
           <span className="com__function_bar__text">Back</span>
           <div className="com__function_bar__arrow" />
         </div>
-        <div className="com__function_bar__button--disable">
+        <div {...navigationProps('Forward', canGoForward, goForward)}>
           <img className="com__function_bar__icon" src={forward} alt="" />
           <div className="com__function_bar__arrow" />
         </div>
-        <div
-          className="com__function_bar__button"
-          {...(sharedFolder
-            ? {
-                role: 'button',
-                tabIndex: 0,
-                'aria-label': 'Up',
-                onClick: goBack,
-                onKeyDown: e => {
-                  if (e.key === 'Enter') goBack();
-                },
-              }
-            : actionProps('Up'))}
-        >
+        <div {...navigationProps('Up', sharedFolder, goUp)}>
           <img className="com__function_bar__icon--normalize" src={up} alt="" />
         </div>
         <div className="com__function_bar__separate" />
@@ -144,9 +212,7 @@ function MyComputer({ onClose, onOpenLocation, sharedFolder = false }) {
             alt=""
             className="com__address_bar__content__img"
           />
-          <div className="com__address_bar__content__text">
-            {sharedFolder ? sharedPath : title}
-          </div>
+          <div className="com__address_bar__content__text">{title}</div>
           <img
             src={dropdown}
             alt="dropdown"
@@ -823,9 +889,5 @@ const Div = styled.div`
     }
   }
 `;
-
-export function SharedDocuments(props) {
-  return <MyComputer {...props} sharedFolder />;
-}
 
 export default MyComputer;

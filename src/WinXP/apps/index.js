@@ -1,7 +1,7 @@
 import InternetExplorer from './InternetExplorer';
 import Minesweeper from './Minesweeper';
 import ErrorBox from './ErrorBox';
-import MyComputer, { SharedDocuments } from './MyComputer';
+import MyComputer from './MyComputer';
 import Notepad from './Notepad';
 import Paint from './Paint';
 import iePaper from 'assets/windowsIcons/ie-paper.png';
@@ -10,7 +10,6 @@ import mine from 'assets/minesweeper/mine-icon.png';
 import error from 'assets/windowsIcons/897(16x16).png';
 import computer from 'assets/windowsIcons/676(16x16).png';
 import computerLarge from 'assets/windowsIcons/676(32x32).png';
-import sharedFolder from 'assets/windowsIcons/318(16x16).png';
 import notepad from 'assets/windowsIcons/327(16x16).png';
 import notepadLarge from 'assets/windowsIcons/327(32x32).png';
 import paintLarge from 'assets/windowsIcons/680(32x32).png';
@@ -25,6 +24,16 @@ const gen = () => {
 };
 const genId = gen();
 const genIndex = gen();
+const internetExplorerSize = {
+  width: Math.min(900, window.innerWidth - 32),
+  height: Math.min(700, window.innerHeight - 70),
+};
+const internetExplorerOffset = {
+  x: Math.min(130, Math.max(16, (window.innerWidth - 900) / 2)),
+  y: 20,
+};
+const internetExplorerMaximized =
+  window.innerWidth < 800 || window.innerHeight < 640;
 export const defaultAppState = [
   {
     component: InternetExplorer,
@@ -32,17 +41,11 @@ export const defaultAppState = [
       title: 'Internet Explorer',
       icon: iePaper,
     },
-    defaultSize: {
-      width: 700,
-      height: 500,
-    },
-    defaultOffset: {
-      x: 130,
-      y: 20,
-    },
+    defaultSize: internetExplorerSize,
+    defaultOffset: internetExplorerOffset,
     resizable: true,
     minimized: false,
-    maximized: window.innerWidth < 800,
+    maximized: internetExplorerMaximized,
     id: genId(),
     zIndex: genIndex(),
   },
@@ -130,20 +133,14 @@ export const appSettings = {
   'Internet Explorer': {
     header: {
       icon: iePaper,
-      title: 'InternetExplorer',
+      title: 'Internet Explorer',
     },
     component: InternetExplorer,
-    defaultSize: {
-      width: 700,
-      height: 500,
-    },
-    defaultOffset: {
-      x: 140,
-      y: 30,
-    },
+    defaultSize: internetExplorerSize,
+    defaultOffset: internetExplorerOffset,
     resizable: true,
     minimized: false,
-    maximized: window.innerWidth < 800,
+    maximized: internetExplorerMaximized,
     multiInstance: true,
   },
   Minesweeper: {
@@ -200,16 +197,6 @@ export const appSettings = {
       x: 260,
       y: 50,
     },
-    resizable: true,
-    minimized: false,
-    maximized: window.innerWidth < 800,
-    multiInstance: false,
-  },
-  'Shared Documents': {
-    header: { icon: sharedFolder, title: 'Shared Documents' },
-    component: SharedDocuments,
-    defaultSize: { width: 660, height: 500 },
-    defaultOffset: { x: 290, y: 80 },
     resizable: true,
     minimized: false,
     maximized: window.innerWidth < 800,

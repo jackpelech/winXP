@@ -13,6 +13,7 @@ function Windows({
   onMaximize,
   focusedAppId,
   onOpenLocation,
+  onChangeHeader,
 }) {
   return (
     <div style={{ position: 'relative', zIndex: 0 }}>
@@ -23,6 +24,7 @@ function Windows({
           id={app.id}
           onMouseDown={onMouseDown}
           onOpenLocation={onOpenLocation}
+          onChangeHeader={onChangeHeader}
           onMouseUpClose={onClose}
           onMouseUpMinimize={onMinimize}
           onMouseUpMaximize={onMaximize}
@@ -39,6 +41,7 @@ const Window = memo(function({
   id,
   onMouseDown,
   onOpenLocation,
+  onChangeHeader,
   onMouseUpClose,
   onMouseUpMinimize,
   onMouseUpMaximize,
@@ -138,6 +141,7 @@ const Window = memo(function({
           onMinimize: _onMouseUpMinimize,
           isFocus,
           onOpenLocation,
+          onChangeHeader: header => onChangeHeader(id, header),
           ...injectProps,
         })}
       </div>

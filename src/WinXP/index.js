@@ -9,6 +9,7 @@ import {
   FOCUS_APP,
   MINIMIZE_APP,
   TOGGLE_MAXIMIZE_APP,
+  UPDATE_APP_HEADER,
   FOCUS_ICON,
   SELECT_ICONS,
   FOCUS_DESKTOP,
@@ -36,6 +37,15 @@ const initState = {
 };
 const reducer = (state, action = { type: '' }) => {
   switch (action.type) {
+    case UPDATE_APP_HEADER:
+      return {
+        ...state,
+        apps: state.apps.map(app =>
+          app.id === action.payload.id
+            ? { ...app, header: { ...app.header, ...action.payload.header } }
+            : app,
+        ),
+      };
     case ADD_APP:
       const app = state.apps.find(
         _app => _app.component === action.payload.component,
@@ -182,6 +192,9 @@ function WinXP() {
   const onFocusApp = useCallback(id => {
     dispatch({ type: FOCUS_APP, payload: id });
   }, []);
+  const onChangeAppHeader = useCallback((id, header) => {
+    dispatch({ type: UPDATE_APP_HEADER, payload: { id, header } });
+  }, []);
   const onMaximizeWindow = useCallback(
     id => {
       if (focusedAppId === id) {
@@ -257,10 +270,6 @@ function WinXP() {
       });
   }
   function onOpenLocation(location) {
-    if (location === 'Shared Documents' || location === 'My Computer') {
-      dispatch({ type: ADD_APP, payload: appSettings[location] });
-      return;
-    }
     const paths = {
       "User's Documents": 'C:\\Documents and Settings\\User\\My Documents',
       'My Documents': 'C:\\Documents and Settings\\User\\My Documents',
@@ -335,6 +344,7 @@ function WinXP() {
         onMaximize={onMaximizeWindow}
         focusedAppId={focusedAppId}
         onOpenLocation={onOpenLocation}
+        onChangeHeader={onChangeAppHeader}
       />
       <Footer
         apps={state.apps}
