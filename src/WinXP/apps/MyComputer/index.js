@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 import { WindowDropDowns } from 'components';
@@ -24,13 +24,38 @@ import dropdown from 'assets/windowsIcons/dropdown.png';
 import pullup from 'assets/windowsIcons/pullup.png';
 import windows from 'assets/windowsIcons/windows.png';
 
-function MyComputer({ onClose }) {
+function MyComputer({ onClose, onOpenLocation, sharedFolder = false }) {
+  const [selectedItem, setSelectedItem] = useState('');
+  const title = sharedFolder ? 'Shared Documents' : 'My Computer';
+  const sharedPath = 'C:\\Documents and Settings\\All Users\\Documents';
+  const goBack = () => {
+    onOpenLocation('My Computer');
+    if (sharedFolder) onClose();
+  };
+  function actionProps(label, doubleClick = false) {
+    const open = () => onOpenLocation(label);
+    return {
+      role: 'button',
+      tabIndex: 0,
+      'aria-label': label,
+      'data-selected': doubleClick && selectedItem === label,
+      onClick: doubleClick ? () => setSelectedItem(label) : open,
+      onDoubleClick: doubleClick ? open : undefined,
+      onKeyDown: e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          open();
+        }
+      },
+    };
+  }
   function onClickOptionItem(item) {
     switch (item) {
       case 'Close':
         onClose();
         break;
       default:
+        onOpenLocation(item);
     }
   }
   return (
@@ -45,7 +70,21 @@ function MyComputer({ onClose }) {
         <img className="com__windows-logo" src={windows} alt="windows" />
       </section>
       <section className="com__function_bar">
-        <div className="com__function_bar__button--disable">
+        <div
+          className={
+            sharedFolder
+              ? 'com__function_bar__button'
+              : 'com__function_bar__button--disable'
+          }
+          role="button"
+          aria-label="Back"
+          aria-disabled={!sharedFolder}
+          tabIndex={sharedFolder ? 0 : -1}
+          onClick={sharedFolder ? goBack : undefined}
+          onKeyDown={e => {
+            if (sharedFolder && e.key === 'Enter') goBack();
+          }}
+        >
           <img className="com__function_bar__icon" src={back} alt="" />
           <span className="com__function_bar__text">Back</span>
           <div className="com__function_bar__arrow" />
@@ -54,11 +93,24 @@ function MyComputer({ onClose }) {
           <img className="com__function_bar__icon" src={forward} alt="" />
           <div className="com__function_bar__arrow" />
         </div>
-        <div className="com__function_bar__button">
+        <div
+          className="com__function_bar__button"
+          {...(sharedFolder
+            ? {
+                role: 'button',
+                tabIndex: 0,
+                'aria-label': 'Up',
+                onClick: goBack,
+                onKeyDown: e => {
+                  if (e.key === 'Enter') goBack();
+                },
+              }
+            : actionProps('Up'))}
+        >
           <img className="com__function_bar__icon--normalize" src={up} alt="" />
         </div>
         <div className="com__function_bar__separate" />
-        <div className="com__function_bar__button">
+        <div className="com__function_bar__button" {...actionProps('Search')}>
           <img
             className="com__function_bar__icon--normalize "
             src={search}
@@ -66,7 +118,7 @@ function MyComputer({ onClose }) {
           />
           <span className="com__function_bar__text">Search</span>
         </div>
-        <div className="com__function_bar__button">
+        <div className="com__function_bar__button" {...actionProps('Folders')}>
           <img
             className="com__function_bar__icon--normalize"
             src={folderOpen}
@@ -75,7 +127,7 @@ function MyComputer({ onClose }) {
           <span className="com__function_bar__text">Folders</span>
         </div>
         <div className="com__function_bar__separate" />
-        <div className="com__function_bar__button">
+        <div className="com__function_bar__button" {...actionProps('Views')}>
           <img
             className="com__function_bar__icon--margin12"
             src={menu}
@@ -88,18 +140,20 @@ function MyComputer({ onClose }) {
         <div className="com__address_bar__title">Address</div>
         <div className="com__address_bar__content">
           <img
-            src={computer}
-            alt="ie"
+            src={sharedFolder ? folderSmall : computer}
+            alt=""
             className="com__address_bar__content__img"
           />
-          <div className="com__address_bar__content__text">My Computer</div>
+          <div className="com__address_bar__content__text">
+            {sharedFolder ? sharedPath : title}
+          </div>
           <img
             src={dropdown}
             alt="dropdown"
             className="com__address_bar__content__img"
           />
         </div>
-        <div className="com__address_bar__go">
+        <div className="com__address_bar__go" {...actionProps('Go')}>
           <img className="com__address_bar__go__img" src={go} alt="go" />
           <span className="com__address_bar__go__text">Go</span>
         </div>
@@ -110,7 +164,7 @@ function MyComputer({ onClose }) {
             <div className="com__content__left__card">
               <div className="com__content__left__card__header">
                 <div className="com__content__left__card__header__text">
-                  System Tasks
+                  {sharedFolder ? 'File and Folder Tasks' : 'System Tasks'}
                 </div>
                 <img
                   src={pullup}
@@ -119,34 +173,57 @@ function MyComputer({ onClose }) {
                 />
               </div>
               <div className="com__content__left__card__content">
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps(
+                    sharedFolder
+                      ? 'Make a new folder'
+                      : 'View system information',
+                  )}
+                >
                   <img
                     className="com__content__left__card__img"
-                    src={viewInfo}
+                    src={sharedFolder ? folderSmall : viewInfo}
                     alt="view"
                   />
                   <div className="com__content__left__card__text link">
-                    View system information
+                    {sharedFolder
+                      ? 'Make a new folder'
+                      : 'View system information'}
                   </div>
                 </div>
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps(
+                    sharedFolder
+                      ? 'Publish this folder to the Web'
+                      : 'Add or remove programs',
+                  )}
+                >
                   <img
                     className="com__content__left__card__img"
-                    src={remove}
+                    src={sharedFolder ? network : remove}
                     alt="remove"
                   />
                   <div className="com__content__left__card__text link">
-                    Add or remove programs
+                    {sharedFolder
+                      ? 'Publish this folder to the Web'
+                      : 'Add or remove programs'}
                   </div>
                 </div>
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps(
+                    sharedFolder ? 'Share this folder' : 'Change a setting',
+                  )}
+                >
                   <img
                     className="com__content__left__card__img"
                     src={control}
                     alt="control"
                   />
                   <div className="com__content__left__card__text link">
-                    Change a setting
+                    {sharedFolder ? 'Share this folder' : 'Change a setting'}
                   </div>
                 </div>
               </div>
@@ -163,17 +240,25 @@ function MyComputer({ onClose }) {
                 />
               </div>
               <div className="com__content__left__card__content">
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps(
+                    sharedFolder ? 'My Computer' : 'My Network Places',
+                  )}
+                >
                   <img
                     className="com__content__left__card__img"
-                    src={network}
+                    src={sharedFolder ? computer : network}
                     alt="network"
                   />
                   <div className="com__content__left__card__text link">
-                    My Network Places
+                    {sharedFolder ? 'My Computer' : 'My Network Places'}
                   </div>
                 </div>
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps('My Documents')}
+                >
                   <img
                     className="com__content__left__card__img"
                     src={document}
@@ -183,7 +268,10 @@ function MyComputer({ onClose }) {
                     My Documents
                   </div>
                 </div>
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps('Shared Documents')}
+                >
                   <img
                     className="com__content__left__card__img"
                     src={folderSmall}
@@ -193,7 +281,10 @@ function MyComputer({ onClose }) {
                     Shared Documents
                   </div>
                 </div>
-                <div className="com__content__left__card__row">
+                <div
+                  className="com__content__left__card__row"
+                  {...actionProps('Control Panel')}
+                >
                   <img
                     className="com__content__left__card__img"
                     src={control}
@@ -219,90 +310,109 @@ function MyComputer({ onClose }) {
               <div className="com__content__left__card__content">
                 <div className="com__content__left__card__row">
                   <div className="com__content__left__card__text">
-                    My Computer
+                    {selectedItem || title}
                   </div>
                 </div>
                 <div className="com__content__left__card__row">
                   <div className="com__content__left__card__text">
-                    System folder
+                    {sharedFolder ? 'File folder' : 'System folder'}
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div className="com__content__right">
-            <div className="com__content__right__card">
-              <div className="com__content__right__card__header">
-                Files Stored on This Computer
-              </div>
-              <div className="com__content__right__card__content">
-                <div className="com__content__right__card__item">
-                  <img
-                    src={folder}
-                    alt="folder"
-                    className="com__content__right__card__img"
-                  />
-                  <div className="com__content__right__card__img-container">
-                    <div className="com__content__right__card__text">
-                      Shared Documents
+            {sharedFolder ? (
+              <div className="com__folder-empty">This folder is empty.</div>
+            ) : (
+              <>
+                <div className="com__content__right__card">
+                  <div className="com__content__right__card__header">
+                    Files Stored on This Computer
+                  </div>
+                  <div className="com__content__right__card__content">
+                    <div
+                      className="com__content__right__card__item"
+                      {...actionProps('Shared Documents', true)}
+                    >
+                      <img
+                        src={folder}
+                        alt="folder"
+                        className="com__content__right__card__img"
+                      />
+                      <div className="com__content__right__card__img-container">
+                        <div className="com__content__right__card__text">
+                          Shared Documents
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="com__content__right__card__item"
+                      {...actionProps("User's Documents", true)}
+                    >
+                      <img
+                        src={folder}
+                        alt="folder"
+                        className="com__content__right__card__img"
+                      />
+                      <div className="com__content__right__card__img-container">
+                        <div className="com__content__right__card__text">
+                          User's Documents
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="com__content__right__card__item">
-                  <img
-                    src={folder}
-                    alt="folder"
-                    className="com__content__right__card__img"
-                  />
-                  <div className="com__content__right__card__img-container">
-                    <div className="com__content__right__card__text">
-                      User's Documents
+                <div className="com__content__right__card">
+                  <div className="com__content__right__card__header">
+                    Hard Disk Drives
+                  </div>
+                  <div className="com__content__right__card__content">
+                    <div
+                      className="com__content__right__card__item"
+                      {...actionProps('Local Disk (C:)', true)}
+                    >
+                      <img
+                        src={disk}
+                        alt="disk"
+                        className="com__content__right__card__img"
+                      />
+                      <div className="com__content__right__card__img-container">
+                        <div className="com__content__right__card__text">
+                          Local Disk (C:)
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="com__content__right__card">
-              <div className="com__content__right__card__header">
-                Hard Disk Drives
-              </div>
-              <div className="com__content__right__card__content">
-                <div className="com__content__right__card__item">
-                  <img
-                    src={disk}
-                    alt="disk"
-                    className="com__content__right__card__img"
-                  />
-                  <div className="com__content__right__card__img-container">
-                    <div className="com__content__right__card__text">
-                      Local Disk (C:)
+                <div className="com__content__right__card">
+                  <div className="com__content__right__card__header">
+                    Devices with Removable Storage
+                  </div>
+                  <div className="com__content__right__card__content">
+                    <div
+                      className="com__content__right__card__item"
+                      {...actionProps('CD Drive (D:)', true)}
+                    >
+                      <div className="com__content__right__card__img-container">
+                        <img
+                          src={cd}
+                          alt="cd"
+                          className="com__content__right__card__img"
+                        />
+                      </div>
+                      <div className="com__content__right__card__text">
+                        CD Drive (D:)
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="com__content__right__card">
-              <div className="com__content__right__card__header">
-                Devices with Removable Storage
-              </div>
-              <div className="com__content__right__card__content">
-                <div className="com__content__right__card__item">
-                  <div className="com__content__right__card__img-container">
-                    <img
-                      src={cd}
-                      alt="cd"
-                      className="com__content__right__card__img"
-                    />
-                  </div>
-                  <div className="com__content__right__card__text">
-                    CD Drive (D:)
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
+      {sharedFolder && <footer className="com__status-bar">0 objects</footer>}
     </Div>
   );
 }
@@ -315,6 +425,37 @@ const Div = styled.div`
   overflow: hidden;
   flex-direction: column;
   background: linear-gradient(to right, #edede5 0%, #ede8cd 100%);
+  [role='button'] {
+    cursor: default;
+  }
+  [role='button']:focus-visible {
+    outline: 1px dotted #333;
+    outline-offset: 1px;
+  }
+  .com__content__right__card__item[data-selected='true']
+    .com__content__right__card__text {
+    background: #316ac5;
+    color: white;
+    outline: 1px dotted #fff;
+  }
+  .com__content__right__card__item[data-selected='true']
+    .com__content__right__card__img {
+    filter: sepia(1) saturate(3) hue-rotate(175deg);
+  }
+  .com__folder-empty {
+    padding: 38px 20px;
+    text-align: center;
+    color: #777;
+  }
+  .com__status-bar {
+    flex-shrink: 0;
+    height: 21px;
+    padding: 3px 7px;
+    border-top: 1px solid #999;
+    box-shadow: inset 1px 1px white;
+    font-size: 11px;
+    background: #ece9d8;
+  }
   .com__toolbar {
     position: relative;
     display: flex;
@@ -682,5 +823,9 @@ const Div = styled.div`
     }
   }
 `;
+
+export function SharedDocuments(props) {
+  return <MyComputer {...props} sharedFolder />;
+}
 
 export default MyComputer;

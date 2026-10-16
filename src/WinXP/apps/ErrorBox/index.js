@@ -15,21 +15,36 @@ function lineBreak(str) {
 function Error({ onClose, message = "Something's wrong!" }) {
   useEffect(() => {
     try {
-      new Audio(errorSoundSrc).play();
+      const playback = new Audio(errorSoundSrc).play();
+      if (playback) playback.catch(() => {});
     } catch (e) {
       console.log(e);
     }
   }, []);
   return (
-    <Div>
+    <Div
+      role="alertdialog"
+      aria-label="Windows error"
+      onKeyDown={e => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <div className="error__top">
         <img src={error} alt="error" className="error__img" />
         <div className="error__messages">{lineBreak(message)}</div>
       </div>
       <div className="error__bottom">
-        <div onClick={onClose} className="error__button">
+        <button
+          type="button"
+          autoFocus
+          onClick={onClose}
+          className="error__button"
+        >
           <span className="error__confirm">OK</span>
-        </div>
+        </button>
       </div>
     </Div>
   );
@@ -63,6 +78,8 @@ const Div = styled.div`
     justify-content: center;
   }
   .error__button {
+    background: #f5f5f5;
+    font: inherit;
     width: 80px;
     height: 22px;
     display: flex;

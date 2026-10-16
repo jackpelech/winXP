@@ -256,6 +256,33 @@ function WinXP() {
         },
       });
   }
+  function onOpenLocation(location) {
+    if (location === 'Shared Documents' || location === 'My Computer') {
+      dispatch({ type: ADD_APP, payload: appSettings[location] });
+      return;
+    }
+    const paths = {
+      "User's Documents": 'C:\\Documents and Settings\\User\\My Documents',
+      'My Documents': 'C:\\Documents and Settings\\User\\My Documents',
+      'Local Disk (C:)': 'C:\\',
+      'CD Drive (D:)': 'D:\\',
+    };
+    const path = paths[location];
+    const message =
+      location === 'CD Drive (D:)'
+        ? 'Please insert a disk into drive D:.'
+        : path
+        ? `${path} is not accessible.\nAccess is denied.`
+        : `Windows cannot open "${location}".\nThis item is not available.`;
+    dispatch({
+      type: ADD_APP,
+      payload: {
+        ...appSettings.Error,
+        header: { ...appSettings.Error.header, title: path || 'My Computer' },
+        injectProps: { message },
+      },
+    });
+  }
   function onMouseDownDesktop(e) {
     if (e.target === e.currentTarget)
       dispatch({
@@ -307,6 +334,7 @@ function WinXP() {
         onMinimize={onMinimizeWindow}
         onMaximize={onMaximizeWindow}
         focusedAppId={focusedAppId}
+        onOpenLocation={onOpenLocation}
       />
       <Footer
         apps={state.apps}

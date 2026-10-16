@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 
 import find from './find.svg';
-import smile from './smile.svg';
 
 function Search({ className, goMain, onSearch, query }) {
   const [value, setValue] = useState(query);
@@ -59,11 +58,6 @@ function Search({ className, goMain, onSearch, query }) {
               </div>
             </div>
           </div>
-          <div className="bar-items right">
-            <div className="functions">
-              <img src={smile} alt="smile" />
-            </div>
-          </div>
         </div>
         <div className="app-bar">
           <div className="tags left">{renderTags()}</div>
@@ -86,11 +80,6 @@ function Search({ className, goMain, onSearch, query }) {
         </ul>
       </section>
       <footer>
-        <section className="upper">
-          <div className="footer-items left">
-            <div className="item">Taiwan</div>
-          </div>
-        </section>
         <section className="lower">
           <div className="footer-items left">
             <div className="item">Help</div>
@@ -218,21 +207,13 @@ export default styled(Search)`
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 83px;
+    height: 42px;
     border-top: 1px solid rgba(0, 0, 0, 0.07);
     background-color: rgba(0, 0, 0, 0.05);
-    .upper {
-      position: relative;
-      color: rgba(0, 0, 0, 0.54);
-      width: 100%;
-      font-size: 15px;
-      padding-bottom: 2px;
-      height: 50%;
-    }
     .lower {
       position: relative;
       border-top: 1px solid rgba(0, 0, 0, 0.07);
-      height: 50%;
+      height: 100%;
       color: rgb(95, 99, 104);
       font-size: 13px;
       width: 100%;
